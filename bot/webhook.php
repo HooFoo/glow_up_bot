@@ -250,6 +250,20 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
         return;
     }
 
+    // Start quiz intro
+    if ($data === 'start_quiz_intro') {
+        $text = "Прежде чем мы перейдем к цифрам и составам, давай поймем, в какой точке ты сейчас.\n\n";
+        $text .= "Твой путь к сиянию зависит от того, какая энергия в тебе доминирует: нужно ли тебе восстановление, структура или масштаб.\n\n";
+        $text .= "Ответь на 7 коротких вопросов. В конце я не только назову твой Glow-архетип, но и вышлю персональный 🎁 ПРИЗ, который поможет тебе сделать первый шаг уже сегодня.";
+
+        $keyboard = TelegramApi::inlineKeyboard([
+            [['text' => '🚀 ПОЕХАЛИ!', 'callback_data' => 'start_quiz']],
+        ]);
+
+        $telegram->sendMessage($chatId, $text, $keyboard);
+        return;
+    }
+
     // Get access (after quiz CTA)
     if ($data === 'get_access') {
         // Start onboarding (free trial activates with quiz completion)
