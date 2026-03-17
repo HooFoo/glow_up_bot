@@ -289,7 +289,7 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
 function sendWelcome(int $chatId, TelegramApi $telegram): void
 {
     $root = Config::getProjectRoot();
-    $messagesFile = file_get_contents($root . '/bot/texts/messages.md');
+    $messagesFile = file_get_contents($root . '/bot/Texts/messages.md');
 
     // Extract START_WELCOME block
     $text = "Привет 🤍\nЯ — твой Prime Beauty AI-ассистент.\n\n";

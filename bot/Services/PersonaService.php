@@ -81,7 +81,7 @@ class PersonaService
     private function sendResult(int $chatId, int $userId, string $persona): void
     {
         $info = self::PERSONAS[$persona];
-        $messagesPath = Config::getProjectRoot() . '/bot/texts/messages.md';
+        $messagesPath = Config::getProjectRoot() . '/bot/Texts/messages.md';
         $content = file_get_contents($messagesPath);
 
         // Try to find persona-specific result text
@@ -110,7 +110,7 @@ class PersonaService
 
     private function sendPaywallCta(int $chatId): void
     {
-        $messagesPath = Config::getProjectRoot() . '/bot/texts/messages.md';
+        $messagesPath = Config::getProjectRoot() . '/bot/Texts/messages.md';
         $content = file_get_contents($messagesPath);
         $text = $this->extractBlock($content, 'PAYWALL_CTA');
 
