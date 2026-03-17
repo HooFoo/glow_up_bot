@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `telegram_id` BIGINT NOT NULL,
+  `username` VARCHAR(255) DEFAULT NULL,
+  `first_name` VARCHAR(255) NOT NULL,
+  `last_name` VARCHAR(255) DEFAULT NULL,
+  `language_code` VARCHAR(10) DEFAULT NULL,
+  `persona` VARCHAR(100) DEFAULT NULL,
+  `active_mode` ENUM('nutrition','cosmetics','coach') DEFAULT NULL,
+  `state` VARCHAR(100) DEFAULT 'new',
+  `message_count` INT UNSIGNED NOT NULL DEFAULT 0,
+  `quiz_completed_at` TIMESTAMP NULL DEFAULT NULL,
+  `onboarding_completed_at` TIMESTAMP NULL DEFAULT NULL,
+  `subscription_end` TIMESTAMP NULL DEFAULT NULL,
+  `is_blocked` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_telegram_id` (`telegram_id`),
+  KEY `idx_subscription_end` (`subscription_end`),
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_state` (`state`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
