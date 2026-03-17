@@ -1,7 +1,7 @@
 .env
 vendor/
-logs/
-*.log
+logs/*.log
+!logs/.gitkeep
 .idea/
 .vscode/
 tmp/

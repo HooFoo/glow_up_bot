@@ -16,7 +16,7 @@ class Logger
     {
         $this->logDir = Config::getProjectRoot() . '/logs';
         if (!is_dir($this->logDir)) {
-            mkdir($this->logDir, 0755, true);
+            @mkdir($this->logDir, 0777, true);
         }
         $this->minLevel = self::LEVELS[Config::getLogLevel()] ?? 2;
     }
@@ -61,6 +61,8 @@ class Logger
         $line .= PHP_EOL;
 
         $file = $this->logDir . '/' . $level . '.log';
-        file_put_contents($file, $line, FILE_APPEND | LOCK_EX);
+        if (is_dir($this->logDir)) {
+            @file_put_contents($file, $line, FILE_APPEND | LOCK_EX);
+        }
     }
 }
