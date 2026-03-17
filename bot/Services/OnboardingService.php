@@ -77,13 +77,16 @@ class OnboardingService
     public function handleAnswer(int $chatId, int $userId, string $data): void
     {
         // data format: onboard_{questionId}_{answerKey}
-        $parts = explode('_', $data, 3);
-        if (count($parts) < 3) {
+        // Question IDs contain underscores (e.g. health_features), so we
+        // strip the 'onboard_' prefix and extract the answer key from the end
+        $rest = substr($data, 8); // remove 'onboard_' prefix
+        $lastUnderscore = strrpos($rest, '_');
+        if ($lastUnderscore === false) {
             return;
         }
 
-        $questionId = $parts[1];
-        $answerKey = $parts[2];
+        $questionId = substr($rest, 0, $lastUnderscore);
+        $answerKey = substr($rest, $lastUnderscore + 1);
 
         // Find question definition
         $question = $this->findQuestion($questionId);

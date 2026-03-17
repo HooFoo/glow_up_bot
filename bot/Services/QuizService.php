@@ -77,13 +77,16 @@ class QuizService
     public function handleAnswer(int $chatId, int $userId, string $data): void
     {
         // data format: quiz_{questionId}_{answerIndex}
-        $parts = explode('_', $data, 3);
-        if (count($parts) < 3) {
+        // Question IDs contain underscores (e.g. morning_routine), so we
+        // strip the 'quiz_' prefix and extract the answer index from the end
+        $rest = substr($data, 5); // remove 'quiz_' prefix
+        $lastUnderscore = strrpos($rest, '_');
+        if ($lastUnderscore === false) {
             return;
         }
 
-        $questionId = $parts[1];
-        $answerIndex = (int) $parts[2];
+        $questionId = substr($rest, 0, $lastUnderscore);
+        $answerIndex = (int) substr($rest, $lastUnderscore + 1);
 
         // Find the answer text
         if (empty($this->questions)) {
