@@ -1,7 +1,6 @@
 # Отключаем просмотр содержимого папок
 Options -Indexes
 
-# Включаем модуль перенаправлений
 RewriteEngine On
 
 # 1. Защита чувствительных файлов
@@ -10,13 +9,16 @@ RewriteEngine On
     Deny from all
 </FilesMatch>
 
-# 2. Белый список: разрешаем только Webhook и Админку
-# Все остальные запросы к папкам bot/, prompts/, quiz/, migrations/, docs/, logs/, vendor/ будут заблокированы 403 ошибкой.
+# 2. РАЗРЕШАЕМ (белый список)
+# Разрешаем админку (всю папку)
+RewriteRule ^admin($|/) - [L]
 
-# Если это не запрос к админке
-RewriteCond %{REQUEST_URI} !^/admin/.*$
-# И не запрос к вебхуку
-RewriteCond %{REQUEST_URI} !^/bot/webhook\.php$
-# То блокируем доступ
-RewriteCond %{REQUEST_URI} !^/favicon\.ico$
+# Разрешаем вебхук
+RewriteRule ^bot/webhook\.php$ - [L]
+
+# Разрешаем иконку
+RewriteRule ^favicon\.ico$ - [L]
+
+# 3. ЗАПРЕЩАЕМ всё остальное
+# Если запрос не попал под правила выше — выдаем 403 Forbidden
 RewriteRule ^.*$ - [F,L]
