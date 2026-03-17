@@ -306,7 +306,7 @@ function sendWelcome(int $chatId, TelegramApi $telegram): void
     $messagesFile = file_get_contents($root . '/bot/Texts/messages.md');
 
     // Extract START_WELCOME block
-    $text = "Привет 🤍\nЯ — твой Prime Beauty AI-ассистент.\n\n";
+    $text = "*Привет 🤍*\nЯ — твой *Prime Beauty AI-ассистент*.\n\n";
     $text .= "Я помогу тебе собрать систему: питание, цикл, антистресс, ритуалы, уход — без хаоса и насилия над собой.\n\n";
     $text .= "Важно: я не врач и не заменяю медицинские рекомендации. Я — инструмент осознанности и структуры.\n\n";
     $text .= "Готова настроить свой Prime-профиль?";

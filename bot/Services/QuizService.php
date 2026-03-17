@@ -41,14 +41,19 @@ class QuizService
         $content = file_get_contents($path);
 
         foreach (self::QUESTION_IDS as $qId) {
-            if (preg_match('/## Вопрос \d+: ' . $qId . '\n\*\*Текст:\*\* (.+?)\n\n\*\*Варианты:\*\*\n((?:\d+\..+\n?)+)/u', $content, $m)) {
+            // Flexible regex to handle different line endings and spacing
+            $pattern = '/## Вопрос \d+: ' . preg_quote($qId, '/') . '\s+\*\*Текст:\*\*\s+(.+?)\s+\*\*Варианты:\*\*\s+((?:\d+\..*(?:[\r\n]+|$))+)/u';
+            
+            if (preg_match($pattern, $content, $m)) {
                 $text = trim($m[1]);
                 $optionsRaw = trim($m[2]);
                 $options = [];
-                preg_match_all('/(\d+)\. (.+)/u', $optionsRaw, $optMatches, PREG_SET_ORDER);
+                
+                preg_match_all('/(\d+)\.\s+(.+)/u', $optionsRaw, $optMatches, PREG_SET_ORDER);
                 foreach ($optMatches as $opt) {
                     $options[(int) $opt[1]] = trim($opt[2]);
                 }
+                
                 $this->questions[$qId] = [
                     'id'      => $qId,
                     'text'    => $text,
@@ -81,6 +86,10 @@ class QuizService
         $answerIndex = (int) $parts[2];
 
         // Find the answer text
+        if (empty($this->questions)) {
+            $this->loadQuestions();
+        }
+        
         $question = $this->questions[$questionId] ?? null;
         if (!$question) {
             return;
@@ -95,6 +104,10 @@ class QuizService
 
         // Find next question index
         $currentIndex = array_search($questionId, self::QUESTION_IDS);
+        if ($currentIndex === false) {
+            return;
+        }
+        
         $nextIndex = $currentIndex + 1;
 
         if ($nextIndex < count(self::QUESTION_IDS)) {
@@ -106,7 +119,13 @@ class QuizService
 
     private function sendQuestion(int $chatId, int $userId, int $index): void
     {
-        $qId = self::QUESTION_IDS[$index];
+        if (empty($this->questions)) {
+            $this->loadQuestions();
+        }
+
+        $qId = self::QUESTION_IDS[$index] ?? null;
+        if (!$qId) return;
+        
         $question = $this->questions[$qId] ?? null;
 
         if (!$question) {
@@ -116,24 +135,26 @@ class QuizService
         $questionNumber = $index + 1;
         $total = count(self::QUESTION_IDS);
         
-        $text = "❓ <b>Вопрос {$questionNumber}/{$total}</b>\n\n";
-        $text .= "<b>{$question['text']}</b>\n\n";
+        // Formatting with HTML as the project standard (simulating Markdown bold)
+        $text = "❓ <b>Вопрос {$questionNumber}/{$total}</b>\n";
+        $text .= "<b>" . htmlspecialchars($question['text']) . "</b>\n\n";
         
         $buttons = [];
         $row = [];
         foreach ($question['options'] as $idx => $optText) {
-            // Add full text to the message body
-            $text .= "{$idx}. {$optText}\n";
-            
-            // Extract a short title if possible (e.g. from "Title: Description")
-            $label = (string)$idx;
-            if (preg_match('/«(.+?)»/u', $optText, $m)) {
-                $label = "{$idx}. {$m[1]}";
+            // Format option text in body: Highlight the "Title" part if it's in quotes
+            if (preg_match('/^«(.+?)»/u', $optText, $mTitle)) {
+                $titleText = $mTitle[1];
+                $remainingText = mb_substr($optText, mb_strlen("«{$titleText}»"));
+                $text .= "{$idx}. <b>«{$titleText}»</b>" . htmlspecialchars($remainingText) . "\n";
+                $label = "{$idx}. {$titleText}";
+            } else {
+                $text .= "{$idx}. " . htmlspecialchars($optText) . "\n";
+                $label = (string)$idx;
             }
             
             $row[] = ['text' => $label, 'callback_data' => "quiz_{$qId}_{$idx}"];
             
-            // If row has 2 buttons, add it and start new row
             if (count($row) === 2) {
                 $buttons[] = $row;
                 $row = [];
