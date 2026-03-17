@@ -17,12 +17,6 @@ RewriteEngine On
 RewriteCond %{REQUEST_URI} !^/admin/.*$
 # И не запрос к вебхуку
 RewriteCond %{REQUEST_URI} !^/bot/webhook\.php$
-# То блокируем доступ (кроме favicon, если он есть)
+# То блокируем доступ
 RewriteCond %{REQUEST_URI} !^/favicon\.ico$
 RewriteRule ^.*$ - [F,L]
-
-# 3. Дополнительная защита папок (на случай если Rewrite не сработает)
-<DirectoryMatch "^/(migrations|prompts|quiz|docs|logs|vendor|bot/(core|services|texts))">
-    Order allow,deny
-    Deny from all
-</DirectoryMatch>
