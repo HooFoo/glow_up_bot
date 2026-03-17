@@ -82,6 +82,9 @@ class QuizService
 
         // Find the answer text
         $question = $this->questions[$questionId] ?? null;
+        if (!$question) {
+            return;
+        }
         $answerText = $question['options'][$answerIndex] ?? "Ответ {$answerIndex}";
 
         // Save answer
@@ -112,13 +115,32 @@ class QuizService
 
         $questionNumber = $index + 1;
         $total = count(self::QUESTION_IDS);
-        $text = "❓ <b>Вопрос {$questionNumber}/{$total}</b>\n\n{$question['text']}";
-
+        
+        $text = "❓ <b>Вопрос {$questionNumber}/{$total}</b>\n\n";
+        $text .= "<b>{$question['text']}</b>\n\n";
+        
         $buttons = [];
+        $row = [];
         foreach ($question['options'] as $idx => $optText) {
-            // Truncate to fit Telegram 64 byte callback_data limit
-            $shortText = mb_substr($optText, 0, 60);
-            $buttons[] = [['text' => "{$idx}. {$shortText}", 'callback_data' => "quiz_{$qId}_{$idx}"]];
+            // Add full text to the message body
+            $text .= "{$idx}. {$optText}\n";
+            
+            // Extract a short title if possible (e.g. from "Title: Description")
+            $label = (string)$idx;
+            if (preg_match('/«(.+?)»/u', $optText, $m)) {
+                $label = "{$idx}. {$m[1]}";
+            }
+            
+            $row[] = ['text' => $label, 'callback_data' => "quiz_{$qId}_{$idx}"];
+            
+            // If row has 2 buttons, add it and start new row
+            if (count($row) === 2) {
+                $buttons[] = $row;
+                $row = [];
+            }
+        }
+        if (!empty($row)) {
+            $buttons[] = $row;
         }
 
         $this->telegram->sendMessage($chatId, $text, TelegramApi::inlineKeyboard($buttons));
