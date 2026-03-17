@@ -1,0 +1,28 @@
+# Отключаем просмотр содержимого папок
+Options -Indexes
+
+# Включаем модуль перенаправлений
+RewriteEngine On
+
+# 1. Защита чувствительных файлов
+<FilesMatch "(\.env|\.git|composer\.(json|lock)|readme\.md|\.sql|Для Гены\.pdf)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# 2. Белый список: разрешаем только Webhook и Админку
+# Все остальные запросы к папкам bot/, prompts/, quiz/, migrations/, docs/, logs/, vendor/ будут заблокированы 403 ошибкой.
+
+# Если это не запрос к админке
+RewriteCond %{REQUEST_URI} !^/admin/.*$
+# И не запрос к вебхуку
+RewriteCond %{REQUEST_URI} !^/bot/webhook\.php$
+# То блокируем доступ (кроме favicon, если он есть)
+RewriteCond %{REQUEST_URI} !^/favicon\.ico$
+RewriteRule ^.*$ - [F,L]
+
+# 3. Дополнительная защита папок (на случай если Rewrite не сработает)
+<DirectoryMatch "^/(migrations|prompts|quiz|docs|logs|vendor|bot/(core|services|texts))">
+    Order allow,deny
+    Deny from all
+</DirectoryMatch>
