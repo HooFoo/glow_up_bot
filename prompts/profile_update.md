@@ -31,7 +31,7 @@
   "height_cm": ...,
   "bmi": ...,
   "health_features": "...",
-  "cycle_phase": "...",
+  "last_period_date": "YYYY-MM-DD или no_cycle",
   "known_facts": ["...", "...", "..."],
   "last_profile_update_at": "{{CURRENT_DATETIME}}"
 }

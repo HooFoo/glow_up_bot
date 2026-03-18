@@ -62,7 +62,7 @@ class ProfileService
             'height_cm'     => $height,
             'bmi'           => $bmi,
             'health_features' => $answerMap['health_features'] ?? null,
-            'cycle_phase'   => $answerMap['cycle_phase'] ?? null,
+            'last_period_date' => $answerMap['last_period_date'] ?? null,
             'known_facts'   => [],
             'last_profile_update_at' => date('c'),
         ];
@@ -85,7 +85,7 @@ class ProfileService
     }
 
     /**
-     * Get the user profile JSON as array.
+     * Get the user profile JSON as array, with dynamically calculated cycle phase.
      */
     public function getProfile(int $userId): ?array
     {
@@ -93,16 +93,34 @@ class ProfileService
         if (!$row) {
             return null;
         }
-        return json_decode($row['profile_json'], true);
+        $profile = json_decode($row['profile_json'], true);
+
+        // Dynamically compute cycle phase from last_period_date
+        $lastPeriodDate = $profile['last_period_date'] ?? null;
+        if ($lastPeriodDate && $lastPeriodDate !== 'no_cycle') {
+            $cycleInfo = CycleService::calculatePhase($lastPeriodDate);
+            $profile['cycle_phase'] = $cycleInfo ? $cycleInfo['label'] : null;
+            $profile['cycle_day'] = $cycleInfo ? $cycleInfo['day'] : null;
+            $profile['cycle_phase_key'] = $cycleInfo ? $cycleInfo['key'] : null;
+        } else {
+            $profile['cycle_phase'] = $lastPeriodDate === 'no_cycle' ? 'Цикл отсутствует' : null;
+            $profile['cycle_day'] = null;
+            $profile['cycle_phase_key'] = $lastPeriodDate === 'no_cycle' ? 'no_cycle' : null;
+        }
+
+        return $profile;
     }
 
     /**
-     * Get raw profile JSON string.
+     * Get raw profile JSON string, enriched with dynamic cycle data for AI prompts.
      */
     public function getProfileJson(int $userId): string
     {
-        $row = $this->db->fetchOne('SELECT profile_json FROM user_profiles WHERE user_id = :uid', [':uid' => $userId]);
-        return $row['profile_json'] ?? '{}';
+        $profile = $this->getProfile($userId);
+        if (!$profile) {
+            return '{}';
+        }
+        return json_encode($profile, JSON_UNESCAPED_UNICODE);
     }
 
     /**

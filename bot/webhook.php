@@ -110,7 +110,7 @@ try {
     // ─── State-based routing ────────────────────────────────────
 
     // User in onboarding text-input step?
-    if (str_starts_with($state, 'onboard_') && $state === 'onboard_body_stats') {
+    if (str_starts_with($state, 'onboard_') && in_array($state, ['onboard_body_stats', 'onboard_last_period_date'])) {
         $onboarding = new OnboardingService($telegram);
         $onboarding->handleTextAnswer($chatId, $userId, $text);
         exit;
@@ -215,8 +215,28 @@ function handleCommand(int $chatId, int $userId, string $text, array $user, Tele
                 $text .= "Цель: " . ($profile['goal'] ?? '—') . "\n";
                 $text .= "Вес/Рост: " . ($profile['weight_kg'] ?? '?') . " / " . ($profile['height_cm'] ?? '?') . "\n";
                 $text .= "BMI: " . ($profile['bmi'] ?? '—') . "\n";
-                $text .= "Цикл: " . ($profile['cycle_phase'] ?? '—') . "\n";
-                $telegram->sendMessage($chatId, $text);
+
+                // Cycle phase (dynamically calculated)
+                if (!empty($profile['cycle_phase'])) {
+                    $cycleDay = $profile['cycle_day'] ?? null;
+                    $cycleText = $profile['cycle_phase'];
+                    if ($cycleDay) {
+                        $cycleText .= " (день {$cycleDay})";
+                    }
+                    $text .= "Цикл: {$cycleText}\n";
+                } else {
+                    $text .= "Цикл: —\n";
+                }
+
+                if (!empty($profile['last_period_date']) && $profile['last_period_date'] !== 'no_cycle') {
+                    $text .= "Дата последних месячных: " . $profile['last_period_date'] . "\n";
+                }
+
+                $keyboard = TelegramApi::inlineKeyboard([
+                    [['text' => '✏️ Редактировать профиль', 'callback_data' => 'edit_profile']],
+                    [['text' => '⬅️ Назад в меню', 'callback_data' => 'back_to_menu']],
+                ]);
+                $telegram->sendMessage($chatId, $text, $keyboard);
             } else {
                 $telegram->sendMessage($chatId, 'Профиль ещё не заполнен. Пройди онбординг: /start');
             }
@@ -296,6 +316,19 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
     // Show profile
     if ($data === 'show_profile') {
         handleCommand($chatId, $userId, '/profile', $user, $telegram);
+        return;
+    }
+
+    // Edit profile → restart onboarding
+    if ($data === 'edit_profile') {
+        $onboarding = new OnboardingService($telegram);
+        $onboarding->resetAndRestart($chatId, $userId);
+        return;
+    }
+
+    // Back to main menu
+    if ($data === 'back_to_menu') {
+        sendMainMenu($chatId, $user, $telegram);
         return;
     }
 }

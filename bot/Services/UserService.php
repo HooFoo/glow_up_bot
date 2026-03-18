@@ -87,6 +87,11 @@ class UserService
         $this->db->execute('UPDATE users SET onboarding_completed_at = NOW(), state = :state WHERE id = :id', [':state' => 'active', ':id' => $userId]);
     }
 
+    public function resetOnboarding(int $userId): void
+    {
+        $this->db->execute('UPDATE users SET onboarding_completed_at = NULL, state = :state WHERE id = :id', [':state' => 'quiz_done', ':id' => $userId]);
+    }
+
     public function incrementMessageCount(int $userId): int
     {
         $this->db->execute('UPDATE users SET message_count = message_count + 1 WHERE id = :id', [':id' => $userId]);

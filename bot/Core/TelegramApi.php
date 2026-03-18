@@ -30,7 +30,17 @@ class TelegramApi
         if ($replyMarkup) {
             $params['reply_markup'] = json_encode($replyMarkup);
         }
-        return $this->request('sendMessage', $params);
+
+        $result = $this->request('sendMessage', $params);
+
+        // Fallback: If sending failed (e.g. formatting error in MarkdownV2 or HTML),
+        // try sending the message as plain text (no parse_mode).
+        if (isset($result['ok']) && $result['ok'] === false) {
+            unset($params['parse_mode']);
+            return $this->request('sendMessage', $params);
+        }
+
+        return $result;
     }
 
     public function sendDocument(int|string $chatId, string $filePath, ?string $caption = null): array

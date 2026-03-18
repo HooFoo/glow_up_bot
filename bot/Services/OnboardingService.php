@@ -42,15 +42,9 @@ class OnboardingService
             ],
         ],
         [
-            'id'      => 'cycle_phase',
-            'text'    => 'Твой цикл (для настройки календаря питания)?',
-            'type'    => 'buttons',
-            'options' => [
-                'menstruation'  => '🔴 Сейчас фаза менструации',
-                'follicular'    => '🟢 Фаза после (эстрогеновая мощь)',
-                'ovulation_pms' => '🟡 Овуляция / ПМС',
-                'no_cycle'      => '⚪️ Цикл отсутствует',
-            ],
+            'id'   => 'last_period_date',
+            'text' => 'Когда начались последние месячные? (Например: 15.03 или 2026-03-15)\n\nЕсли цикл отсутствует — напиши «нет».',
+            'type' => 'text',
         ],
     ];
 
@@ -66,6 +60,30 @@ class OnboardingService
     public function start(int $chatId, int $userId): void
     {
         $text = "Чтобы я могла давать тебе точные рекомендации, мне нужны твои базовые настройки.\n\nЭто займет 30 секунд, но сэкономит тебе часы жизни ✨";
+        $this->telegram->sendMessage($chatId, $text);
+
+        $this->sendQuestion($chatId, $userId, 0);
+    }
+
+    /**
+     * Reset onboarding answers and restart the questionnaire (for profile editing).
+     */
+    public function resetAndRestart(int $chatId, int $userId): void
+    {
+        // Delete previous onboarding answers
+        $onboardingQuestionIds = array_map(fn($q) => $q['id'], self::QUESTIONS);
+        $placeholders = implode(',', array_map(fn($id) => "'{$id}'", $onboardingQuestionIds));
+        $this->db->execute(
+            "DELETE FROM quiz_answers WHERE user_id = :uid AND question_id IN ({$placeholders})",
+            [':uid' => $userId]
+        );
+
+        // Reset onboarding flag
+        $userService = new UserService();
+        $userService->resetOnboarding($userId);
+
+        // Send intro and start from question 0
+        $text = "✏️ <b>Редактирование профиля</b>\n\nДавай обновим твои данные. Ответь на несколько вопросов заново.";
         $this->telegram->sendMessage($chatId, $text);
 
         $this->sendQuestion($chatId, $userId, 0);
@@ -119,7 +137,7 @@ class OnboardingService
     }
 
     /**
-     * Handle free-text answers (e.g., weight/height).
+     * Handle free-text answers (e.g., weight/height, last period date).
      */
     public function handleTextAnswer(int $chatId, int $userId, string $text): void
     {
@@ -128,7 +146,7 @@ class OnboardingService
         $user = $userService->findById($userId);
         $state = $user['state'] ?? '';
 
-        // If state is onboard_body_stats => save it
+        // body_stats => save weight/height
         if ($state === 'onboard_body_stats') {
             $this->db->insert(
                 'INSERT INTO quiz_answers (user_id, question_id, answer) VALUES (:uid, :qid, :answer)',
@@ -137,7 +155,71 @@ class OnboardingService
 
             // Move to next question (index 2)
             $this->sendQuestion($chatId, $userId, 2);
+            return;
         }
+
+        // last_period_date => validate & save date
+        if ($state === 'onboard_last_period_date') {
+            $dateValue = $this->parseLastPeriodDate($text);
+
+            if ($dateValue === null) {
+                $this->telegram->sendMessage($chatId, '❌ Не удалось распознать дату. Напиши в формате ДД.ММ (например: 15.03) или «нет», если цикл отсутствует.');
+                return;
+            }
+
+            $this->db->insert(
+                'INSERT INTO quiz_answers (user_id, question_id, answer) VALUES (:uid, :qid, :answer)',
+                [':uid' => $userId, ':qid' => 'last_period_date', ':answer' => $dateValue]
+            );
+
+            // last_period_date is question index 3 => next is index 4 which doesn't exist => finish
+            $currentIndex = $this->getQuestionIndex('last_period_date');
+            $nextIndex = $currentIndex + 1;
+
+            if ($nextIndex < count(self::QUESTIONS)) {
+                $this->sendQuestion($chatId, $userId, $nextIndex);
+            } else {
+                $this->finishOnboarding($chatId, $userId);
+            }
+            return;
+        }
+    }
+
+    /**
+     * Parse the last period date from user input.
+     * Supports: "15.03", "15.03.2026", "2026-03-15", "нет"/"net"/"no".
+     * Returns Y-m-d string or 'no_cycle'.
+     */
+    private function parseLastPeriodDate(string $input): ?string
+    {
+        $input = trim(mb_strtolower($input));
+
+        // "нет", "no", "net" => no cycle
+        if (in_array($input, ['нет', 'no', 'net', '-', 'нету'], true)) {
+            return 'no_cycle';
+        }
+
+        // DD.MM or DD.MM.YYYY
+        if (preg_match('/^(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?$/', $input, $m)) {
+            $day = (int) $m[1];
+            $month = (int) $m[2];
+            $year = isset($m[3]) ? (int) $m[3] : (int) date('Y');
+            if ($year < 100) {
+                $year += 2000;
+            }
+            if (checkdate($month, $day, $year)) {
+                return sprintf('%04d-%02d-%02d', $year, $month, $day);
+            }
+        }
+
+        // ISO format: YYYY-MM-DD
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $input, $m)) {
+            if (checkdate((int) $m[2], (int) $m[3], (int) $m[1])) {
+                return $input;
+            }
+        }
+
+        return null;
     }
 
     private function sendQuestion(int $chatId, int $userId, int $index): void
