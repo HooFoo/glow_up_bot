@@ -161,8 +161,8 @@ class TelegramApi
         $this->http->get($url, ['sink' => $destPath]);
     }
 
-    // ─── Edit Message ────────────────────────────────────────────
-
+    // ─── Edit/Delete Message ─────────────────────────────────────
+    
     public function editMessageText(int|string $chatId, int $messageId, string $text, ?array $replyMarkup = null): array
     {
         $params = [
@@ -175,6 +175,14 @@ class TelegramApi
             $params['reply_markup'] = json_encode($replyMarkup);
         }
         return $this->request('editMessageText', $params);
+    }
+
+    public function deleteMessage(int|string $chatId, int $messageId): array
+    {
+        return $this->request('deleteMessage', [
+            'chat_id'    => $chatId,
+            'message_id' => $messageId,
+        ]);
     }
 
     // ─── Low-level ───────────────────────────────────────────────

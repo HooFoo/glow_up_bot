@@ -138,23 +138,39 @@ class QuizService
         $questionNumber = $index + 1;
         $total = count(self::QUESTION_IDS);
         
-        // Formatting with HTML as the project standard (simulating Markdown bold)
+        // Formatting with HTML as the project standard
         $text = "❓ <b>Вопрос {$questionNumber}/{$total}</b>\n";
-        $text .= "<b>" . htmlspecialchars($question['text']) . "</b>\n\n";
+        $text .= "<b>«" . htmlspecialchars($question['text']) . "»</b>\n\n";
         
         $buttons = [];
         $row = [];
         foreach ($question['options'] as $idx => $optText) {
-            // Format option text in body: Highlight the "Title" part if it's in quotes
-            if (preg_match('/^«(.+?)»/u', $optText, $mTitle)) {
-                $titleText = $mTitle[1];
-                $remainingText = mb_substr($optText, mb_strlen("«{$titleText}»"));
-                $text .= "{$idx}. <b>«{$titleText}»</b>" . htmlspecialchars($remainingText) . "\n";
-                $label = "{$idx}. {$titleText}";
+            // Extract "Title" part if it's in quotes or separated by colon/dot
+            $titleText = '';
+            $remainingText = '';
+
+            if (preg_match('/^[«"](.+?)[»"][\s\:]*(.*)$/u', $optText, $m)) {
+                $titleText = $m[1];
+                $remainingText = $m[2];
+            } elseif (preg_match('/^(.+?)[.\:—]\s*(.*)$/u', $optText, $m)) {
+                $titleText = $m[1];
+                $remainingText = $m[2];
             } else {
-                $text .= "{$idx}. " . htmlspecialchars($optText) . "\n";
-                $label = (string)$idx;
+                $titleText = $optText;
+                $remainingText = '';
             }
+
+            // Body: "1. «Title» — Description"
+            $text .= "{$idx}. <b>«{$titleText}»</b>";
+            if ($remainingText) {
+                // If the remaining text doesn't start with a separator, add one
+                $separator = (str_starts_with($remainingText, ':') || str_starts_with($remainingText, '—')) ? '' : ' — ';
+                $text .= $separator . htmlspecialchars($remainingText);
+            }
+            $text .= "\n";
+            
+            // Button label: only the title
+            $label = $titleText;
             
             $row[] = ['text' => $label, 'callback_data' => "quiz_{$qId}_{$idx}"];
             
@@ -176,7 +192,22 @@ class QuizService
 
     private function finishQuiz(int $chatId, int $userId): void
     {
-        // Calculate persona
+        @set_time_limit(180); // Ensure the script has enough time for the simulation
+
+        // 1. Send "Processing" message
+        $msg = $this->telegram->sendMessage($chatId, "⏳ <b>Обрабатываю твои ответы...</b>\n\nМой ИИ-алгоритм анализирует твое текущее состояние и формирует персональный Glow-архетип.\n\nЭто займет около 2 минут...");
+        $processingMessageId = $msg['result']['message_id'] ?? null;
+
+        // 2. Wait for 120 seconds
+        // Note: webhook.php should support background processing via fastcgi_finish_request() and ignore_user_abort(true)
+        sleep(120);
+
+        // 3. Delete the processing message
+        if ($processingMessageId) {
+            $this->telegram->deleteMessage($chatId, $processingMessageId);
+        }
+
+        // 4. Calculate persona and send result
         $personaService = new PersonaService($this->telegram);
         $personaService->assignFromQuiz($chatId, $userId);
     }
