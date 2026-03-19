@@ -140,19 +140,19 @@ class ChatService
 
     private function buildSystemPrompt(int $userId, string $mode): string
     {
-        $root = Config::getProjectRoot();
+        $textService = new TextService();
 
         // 1. Base system prompt
-        $base = file_get_contents($root . '/prompts/base_system.md');
+        $base = $textService->get('prompt_base_system');
 
         // 2. Mode-specific prompt
-        $modeFile = match ($mode) {
-            'nutrition'  => '/prompts/nutrition_system.md',
-            'cosmetics'  => '/prompts/cosmetics_system.md',
-            'coach'      => '/prompts/coach_system.md',
-            default      => '/prompts/nutrition_system.md',
+        $modePromptKey = match ($mode) {
+            'nutrition'  => 'prompt_nutrition_system',
+            'cosmetics'  => 'prompt_cosmetics_system',
+            'coach'      => 'prompt_coach_system',
+            default      => 'prompt_nutrition_system',
         };
-        $modePrompt = file_get_contents($root . $modeFile);
+        $modePrompt = $textService->get($modePromptKey);
 
         // 3. User profile
         $profileService = new ProfileService();

@@ -63,6 +63,7 @@ function adminHeader(string $title, string $activePage = ''): void
         <div class="sidebar-brand">💎 Prime/Glow</div>
         <a href="index.php" class="nav-link <?= $activePage === 'dashboard' ? 'active' : '' ?>">📊 Dashboard</a>
         <a href="users.php" class="nav-link <?= $activePage === 'users' ? 'active' : '' ?>">👥 Пользователи</a>
+        <a href="texts.php" class="nav-link <?= $activePage === 'texts' ? 'active' : '' ?>">📝 Тексты</a>
         <a href="?logout=1" class="nav-link logout">🚪 Выход</a>
     </nav>
     <main class="content">

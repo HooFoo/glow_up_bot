@@ -144,7 +144,8 @@ class ProfileService
         $currentProfile = $this->getProfileJson($userId);
 
         // Load prompt template
-        $promptTemplate = file_get_contents(Config::getProjectRoot() . '/prompts/profile_update.md');
+        $textService = new TextService();
+        $promptTemplate = $textService->get('prompt_profile_update');
         $promptTemplate = str_replace('{{CURRENT_PROFILE_JSON}}', $currentProfile, $promptTemplate);
 
         $historyText = '';
