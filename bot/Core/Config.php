@@ -115,6 +115,11 @@ class Config
         return rtrim(self::get('APP_URL', ''), '/');
     }
 
+    public static function getTinymceApiKey(): string
+    {
+        return self::get('TINYMCE_API_KEY', 'no-api-key');
+    }
+
     public static function isDebug(): bool
     {
         return self::getAppEnv() === 'development';

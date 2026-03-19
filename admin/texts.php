@@ -78,7 +78,7 @@ adminHeader('Управление текстами', 'texts');
     </div>
 
     <!-- TinyMCE Integration -->
-    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="https://cdn.tiny.cloud/1/<?= \App\Core\Config::getTinymceApiKey() ?>/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <script>
       tinymce.init({
         selector: '#content-editor',
