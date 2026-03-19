@@ -77,23 +77,47 @@ adminHeader('Управление текстами', 'texts');
         </form>
     </div>
 
-    <!-- TinyMCE Integration -->
-    <script src="https://cdn.tiny.cloud/1/<?= \App\Core\Config::getTinymceApiKey() ?>/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-    <script>
-      tinymce.init({
-        selector: '#content-editor',
-        plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
-        toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | code help',
-        skin: 'oxide-dark',
-        content_css: 'dark',
-        height: 600,
-        promotion: false,
-        branding: false,
-        setup: function (editor) {
-            editor.on('change', function () {
-                editor.save();
-            });
+    <!-- EasyMDE Integration (Better for Markdown) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+    <style>
+        .CodeMirror {
+            background: #16213e !important;
+            color: #e0e0e0 !important;
+            border: 1px solid #2a2a3e !important;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 14px;
         }
+        .editor-toolbar {
+            background: #1a1a2e !important;
+            border: 1px solid #2a2a3e !important;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            opacity: 1 !important;
+        }
+        .editor-toolbar i { color: #9e9e9e !important; }
+        .editor-toolbar a:hover, .editor-toolbar a.active {
+            background: #2a2a3e !important;
+            color: var(--accent-primary) !important;
+            border: none !important;
+        }
+        .editor-preview {
+            background: #0f0f1a !important;
+            color: #e0e0e0 !important;
+        }
+        .editor-statusbar { color: #9e9e9e !important; }
+    </style>
+    <script>
+      const easyMDE = new EasyMDE({
+        element: document.getElementById('content-editor'),
+        spellChecker: false,
+        status: false,
+        minHeight: "500px",
+        maxHeight: "600px",
+        placeholder: "Пишите в формате Markdown...",
+        toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "image", "|", "preview", "side-by-side", "fullscreen", "|", "guide"]
       });
     </script>
 

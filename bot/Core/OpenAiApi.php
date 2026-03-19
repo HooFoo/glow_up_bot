@@ -151,9 +151,13 @@ class OpenAiApi
     private function addMaxTokens(array $body, int $maxTokens): array
     {
         $model = $body['model'] ?? '';
-        $isReasoning = str_starts_with($model, 'o1') || str_starts_with($model, 'o3');
 
-        if ($isReasoning) {
+        // Reasoning models (o1, o3) and newer generations (like the 'gpt-5' in logs) 
+        // do not support 'max_tokens' anymore.
+        $isReasoning = str_starts_with($model, 'o1') || str_starts_with($model, 'o3');
+        $isUnknownOrNewGen = !str_starts_with($model, 'gpt-3.5') && !str_starts_with($model, 'gpt-4');
+
+        if ($isReasoning || $isUnknownOrNewGen) {
             $body['max_completion_tokens'] = $maxTokens;
         } else {
             $body['max_tokens'] = $maxTokens;
@@ -166,8 +170,9 @@ class OpenAiApi
     {
         $model = $body['model'] ?? '';
         $isReasoning = str_starts_with($model, 'o1') || str_starts_with($model, 'o3');
+        $isGpt5 = $model === 'gpt-5';
 
-        if (!$isReasoning) {
+        if (!$isReasoning && !$isGpt5) {
             $body['temperature'] = $temperature;
         }
 

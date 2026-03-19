@@ -22,6 +22,10 @@ class TelegramApi
 
     public function sendMessage(int|string $chatId, string $text, ?array $replyMarkup = null, string $parseMode = 'HTML'): array
     {
+        if (trim($text) === '') {
+            return ['ok' => false, 'error' => 'Message text is empty'];
+        }
+
         $params = [
             'chat_id'    => $chatId,
             'text'       => $text,
