@@ -37,11 +37,12 @@ class OpenAiApi
     public function chat(array $messages, float $temperature = 0.7, int $maxTokens = 1024): string
     {
         $body = [
-            'model'       => Config::getOpenAiModel(),
-            'messages'    => $messages,
-            'temperature' => $temperature,
-            'max_tokens'  => $maxTokens,
+            'model'    => Config::getOpenAiModel(),
+            'messages' => $messages,
         ];
+
+        $body = $this->addMaxTokens($body, $maxTokens);
+        $body = $this->addTemperature($body, $temperature);
 
         $result = $this->post('chat/completions', $body);
 
@@ -56,10 +57,11 @@ class OpenAiApi
         $body = [
             'model'           => Config::getOpenAiModel(),
             'messages'        => $messages,
-            'temperature'     => $temperature,
-            'max_tokens'      => $maxTokens,
             'response_format' => ['type' => 'json_object'],
         ];
+
+        $body = $this->addMaxTokens($body, $maxTokens);
+        $body = $this->addTemperature($body, $temperature);
 
         $result = $this->post('chat/completions', $body);
 
@@ -102,11 +104,12 @@ class OpenAiApi
         ];
 
         $body = [
-            'model'       => Config::getOpenAiModel(),
-            'messages'    => $messages,
-            'max_tokens'  => 1024,
-            'temperature' => 0.7,
+            'model'    => Config::getOpenAiModel(),
+            'messages' => $messages,
         ];
+
+        $body = $this->addMaxTokens($body, 1024);
+        $body = $this->addTemperature($body, 0.7);
 
         $result = $this->post('chat/completions', $body);
 
@@ -143,7 +146,33 @@ class OpenAiApi
         }
     }
 
-    // ─── Low-level ───────────────────────────────────────────────
+    // ─── Helpers ────────────────────────────────────────────────
+
+    private function addMaxTokens(array $body, int $maxTokens): array
+    {
+        $model = $body['model'] ?? '';
+        $isReasoning = str_starts_with($model, 'o1') || str_starts_with($model, 'o3');
+
+        if ($isReasoning) {
+            $body['max_completion_tokens'] = $maxTokens;
+        } else {
+            $body['max_tokens'] = $maxTokens;
+        }
+
+        return $body;
+    }
+
+    private function addTemperature(array $body, float $temperature): array
+    {
+        $model = $body['model'] ?? '';
+        $isReasoning = str_starts_with($model, 'o1') || str_starts_with($model, 'o3');
+
+        if (!$isReasoning) {
+            $body['temperature'] = $temperature;
+        }
+
+        return $body;
+    }
 
     private function post(string $endpoint, array $body): array
     {
@@ -156,6 +185,7 @@ class OpenAiApi
         } catch (\Throwable $e) {
             Logger::getInstance()->error("OpenAI API error: {$endpoint}", [
                 'error' => $e->getMessage(),
+                'body'  => $body, // Added body for easier debugging
             ]);
             return [];
         }
