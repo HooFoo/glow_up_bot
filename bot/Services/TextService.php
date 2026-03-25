@@ -20,7 +20,8 @@ class TextService
      */
     public function get(string $key, string $default = ''): string
     {
-        $row = $this->db->fetchOne('SELECT content FROM texts WHERE `key` = :key', [':key' => $key]);
+        // Try fetching only active text first
+        $row = $this->db->fetchOne('SELECT content FROM texts WHERE `key` = :key AND active = 1', [':key' => $key]);
         return $row['content'] ?? $default;
     }
 

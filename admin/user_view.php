@@ -19,6 +19,22 @@ $userService = new UserService();
 $user = $userService->findById($userId);
 if (!$user) { header('Location: users.php'); exit; }
 
+// Handle Subscription Update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_sub') {
+    $subType = $_POST['sub_type'] ?? '';
+    if ($subType === 'paid') {
+        $userService->setSubscriptionEnd($userId, date('Y-m-d H:i:s', time() + (30 * 86400)));
+    } elseif ($subType === 'trial') {
+        $userService->setSubscriptionEnd($userId, null);
+        $userService->setQuizCompletedAt($userId, date('Y-m-d H:i:s'));
+    } elseif ($subType === 'revoke') {
+        $userService->setSubscriptionEnd($userId, null);
+        $userService->setQuizCompletedAt($userId, date('Y-m-d H:i:s', time() - (14 * 86400)));
+    }
+    header("Location: user_view.php?id={$userId}");
+    exit;
+}
+
 $profileService = new ProfileService();
 $profile = $profileService->getProfile($userId);
 
@@ -63,6 +79,19 @@ adminHeader('Пользователь: ' . htmlspecialchars($user['first_name'])
             <?php else: ?>
                 <span class="badge badge-inactive">Неактивна</span>
             <?php endif; ?>
+        </div>
+        <div class="field">
+            <span class="field-label">Управление:</span>
+            <form method="post" style="display:inline-block; margin-top: 5px;">
+                <input type="hidden" name="action" value="update_sub">
+                <select name="sub_type" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                    <option value="">Действие...</option>
+                    <option value="paid">Выдать подписку (30 дней)</option>
+                    <option value="trial">Начать триал заново</option>
+                    <option value="revoke">Завершить доступ</option>
+                </select>
+                <button type="submit" class="btn btn-primary" style="padding: 4px 8px; font-size: 13px;">Применить</button>
+            </form>
         </div>
         <?php if (!empty($user['subscription_end'])): ?>
         <div class="field"><span class="field-label">До:</span> <span class="field-value"><?= date('d.m.Y H:i', strtotime($user['subscription_end'])) ?></span></div>

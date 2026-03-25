@@ -99,9 +99,14 @@ class UserService
         return (int) ($user['message_count'] ?? 0);
     }
 
-    public function setSubscriptionEnd(int $userId, string $datetime): void
+    public function setSubscriptionEnd(int $userId, ?string $datetime): void
     {
         $this->db->execute('UPDATE users SET subscription_end = :sub_end WHERE id = :id', [':sub_end' => $datetime, ':id' => $userId]);
+    }
+
+    public function setQuizCompletedAt(int $userId, ?string $datetime): void
+    {
+        $this->db->execute('UPDATE users SET quiz_completed_at = :quiz_time WHERE id = :id', [':quiz_time' => $datetime, ':id' => $userId]);
     }
 
     // ─── Admin queries ───────────────────────────────────────────

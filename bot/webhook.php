@@ -13,6 +13,7 @@ use App\Services\OnboardingService;
 use App\Services\PersonaService;
 use App\Services\ChatService;
 use App\Services\SubscriptionService;
+use App\Services\FunnelService;
 
 // ─── 1. Read incoming update ─────────────────────────────────────
 $input = file_get_contents('php://input');
@@ -108,6 +109,13 @@ try {
     }
 
     // ─── State-based routing ────────────────────────────────────
+
+    // User in warm-up funnel
+    if (str_starts_with($state, 'funnel_')) {
+        $funnel = new FunnelService($telegram);
+        $funnel->handleInput($chatId, $userId, $state, $text);
+        exit;
+    }
 
     // User in onboarding text-input step?
     if (str_starts_with($state, 'onboard_') && in_array($state, ['onboard_body_stats', 'onboard_last_period_date'])) {
@@ -260,6 +268,14 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
     if (str_starts_with($data, 'onboard_')) {
         $onboarding = new OnboardingService($telegram);
         $onboarding->handleAnswer($chatId, $userId, $data);
+        return;
+    }
+
+    // Funnel answers
+    if (str_starts_with($data, 'funnel_')) {
+        $funnel = new FunnelService($telegram);
+        // The user array is passed to handleCallback
+        $funnel->handleCallback($chatId, $userId, $user['state'] ?? '', $data);
         return;
     }
 

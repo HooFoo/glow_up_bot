@@ -74,8 +74,9 @@ class PersonaService
         // Send gift
         $this->sendGift($chatId, $persona);
 
-        // Send CTA / paywall message
-        $this->sendPaywallCta($chatId);
+        // Send CTA / paywall message (replaced with Funnel)
+        $funnel = new FunnelService($this->telegram);
+        $funnel->start($chatId, $userId);
     }
 
     private function sendResult(int $chatId, int $userId, string $persona): void
