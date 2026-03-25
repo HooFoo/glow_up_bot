@@ -127,7 +127,7 @@ adminHeader('Управление текстами', 'texts');
             <thead>
                 <tr>
                     <th style="width: 60px;">ID</th>
-                    <th>Название</th>
+                    <th>Превью сообщения</th>
                     <th>Ключ</th>
                     <th>Последнее обновление</th>
                     <th style="width: 120px; text-align: right;">Действия</th>
@@ -137,7 +137,7 @@ adminHeader('Управление текстами', 'texts');
                 <?php foreach ($texts as $text): ?>
                 <tr>
                     <td><?= $text['id'] ?></td>
-                    <td><strong><?= htmlspecialchars($text['title']) ?></strong></td>
+                    <td><strong><?= htmlspecialchars(mb_strlen($text['content']) > 80 ? mb_substr($text['content'], 0, 80) . '...' : $text['content']) ?></strong></td>
                     <td style="font-family: monospace; color: #9e9e9e; font-size: 12px;"><?= htmlspecialchars($text['key']) ?></td>
                     <td style="color: #9e9e9e; font-size: 13px;"><?= date('d.m.Y H:i', strtotime($text['updated_at'])) ?></td>
                     <td style="text-align: right;">
