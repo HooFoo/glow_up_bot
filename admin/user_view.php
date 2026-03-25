@@ -20,16 +20,20 @@ $user = $userService->findById($userId);
 if (!$user) { header('Location: users.php'); exit; }
 
 // Handle Subscription Update
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_sub') {
-    $subType = $_POST['sub_type'] ?? '';
-    if ($subType === 'paid') {
-        $userService->setSubscriptionEnd($userId, date('Y-m-d H:i:s', time() + (30 * 86400)));
-    } elseif ($subType === 'trial') {
-        $userService->setSubscriptionEnd($userId, null);
-        $userService->setQuizCompletedAt($userId, date('Y-m-d H:i:s'));
-    } elseif ($subType === 'revoke') {
-        $userService->setSubscriptionEnd($userId, null);
-        $userService->setQuizCompletedAt($userId, date('Y-m-d H:i:s', time() - (14 * 86400)));
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'update_sub') {
+        $subType = $_POST['sub_type'] ?? '';
+        if ($subType === 'paid') {
+            $userService->setSubscriptionEnd($userId, date('Y-m-d H:i:s', time() + (30 * 86400)));
+        } elseif ($subType === 'trial') {
+            $userService->setSubscriptionEnd($userId, null);
+            $userService->setQuizCompletedAt($userId, date('Y-m-d H:i:s'));
+        } elseif ($subType === 'revoke') {
+            $userService->setSubscriptionEnd($userId, null);
+            $userService->setQuizCompletedAt($userId, date('Y-m-d H:i:s', time() - (14 * 86400)));
+        }
+    } elseif ($_POST['action'] === 'reset_session') {
+        $userService->resetUserSession($userId);
     }
     header("Location: user_view.php?id={$userId}");
     exit;
@@ -55,6 +59,10 @@ adminHeader('Пользователь: ' . htmlspecialchars($user['first_name'])
 <div style="margin-bottom: 16px;">
     <a href="users.php" class="btn btn-outline">← Назад</a>
     <a href="conversation.php?id=<?= $userId ?>" class="btn btn-primary" style="margin-left: 8px;">💬 Переписка</a>
+    <form method="post" style="display:inline-block; margin-left: 8px;" onsubmit="return confirm('Вы уверены? Это действие навсегда удалит всю переписку, профиль и профильную информацию пользователя, вернув его в состояние до ввода /start.');">
+        <input type="hidden" name="action" value="reset_session">
+        <button type="submit" class="btn btn-outline" style="color: #ef5350; border-color: #ef5350;">🧨 Полный сброс</button>
+    </form>
 </div>
 
 <div class="profile-grid">

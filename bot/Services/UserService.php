@@ -109,6 +109,20 @@ class UserService
         $this->db->execute('UPDATE users SET quiz_completed_at = :quiz_time WHERE id = :id', [':quiz_time' => $datetime, ':id' => $userId]);
     }
 
+    public function resetUserSession(int $userId): void
+    {
+        $this->db->execute('DELETE FROM quiz_answers WHERE user_id = :id', [':id' => $userId]);
+        $this->db->execute('DELETE FROM user_profiles WHERE user_id = :id', [':id' => $userId]);
+        $this->db->execute('DELETE FROM conversation_summaries WHERE user_id = :id', [':id' => $userId]);
+        $this->db->execute('DELETE FROM messages WHERE user_id = :id', [':id' => $userId]);
+        $this->db->execute('DELETE FROM subscriptions WHERE user_id = :id', [':id' => $userId]);
+
+        $this->db->execute(
+            'UPDATE users SET state = "new", quiz_completed_at = NULL, onboarding_completed_at = NULL, persona = NULL, active_mode = NULL, message_count = 0, subscription_end = NULL WHERE id = :id',
+            [':id' => $userId]
+        );
+    }
+
     // ─── Admin queries ───────────────────────────────────────────
 
     public function getListForAdmin(int $page = 1, int $perPage = 20): array
