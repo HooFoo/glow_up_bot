@@ -195,12 +195,12 @@ class QuizService
         @set_time_limit(180); // Ensure the script has enough time for the simulation
 
         // 1. Send "Processing" message
-        $msg = $this->telegram->sendMessage($chatId, "⏳ <b>Обрабатываю твои ответы...</b>\n\nМой ИИ-алгоритм анализирует твое текущее состояние и формирует персональный Glow-архетип.\n\nЭто займет около 2 минут...");
+        $msg = $this->telegram->sendMessage($chatId, "⏳ <b>Обрабатываю твои ответы...</b>\n\nМой ИИ-алгоритм анализирует твое текущее состояние и формирует персональный Glow-архетип.\n\nЭто займет около 30 секунд...");
         $processingMessageId = $msg['result']['message_id'] ?? null;
 
         // 2. Wait for 120 seconds
         // Note: webhook.php should support background processing via fastcgi_finish_request() and ignore_user_abort(true)
-        sleep(120);
+        sleep(20);
 
         // 3. Delete the processing message
         if ($processingMessageId) {
