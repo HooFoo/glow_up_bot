@@ -138,9 +138,9 @@ class QuizService
         $questionNumber = $index + 1;
         $total = count(self::QUESTION_IDS);
         
-        // Formatting with HTML as the project standard
-        $text = "❓ <b>Вопрос {$questionNumber}/{$total}</b>\n";
-        $text .= "<b>«" . htmlspecialchars($question['text']) . "»</b>\n\n";
+        // Formatting with MarkdownV2
+        $text = "❓ *Вопрос {$questionNumber}/{$total}*\n";
+        $text .= "*«" . TelegramApi::escapeMarkdownV2($question['text']) . "»*\n\n";
         
         $buttons = [];
         $row = [];
@@ -161,11 +161,11 @@ class QuizService
             }
 
             // Body: "1. «Title» — Description"
-            $text .= "{$idx}. <b>«{$titleText}»</b>";
+            $text .= "{$idx}\. *«" . TelegramApi::escapeMarkdownV2($titleText) . "»*";
             if ($remainingText) {
                 // If the remaining text doesn't start with a separator, add one
                 $separator = (str_starts_with($remainingText, ':') || str_starts_with($remainingText, '—')) ? '' : ' — ';
-                $text .= $separator . htmlspecialchars($remainingText);
+                $text .= $separator . TelegramApi::escapeMarkdownV2($remainingText);
             }
             $text .= "\n";
             
@@ -195,7 +195,7 @@ class QuizService
         @set_time_limit(180); // Ensure the script has enough time for the simulation
 
         // 1. Send "Processing" message
-        $msg = $this->telegram->sendMessage($chatId, "⏳ <b>Обрабатываю твои ответы...</b>\n\nМой ИИ-алгоритм анализирует твое текущее состояние и формирует персональный Glow-архетип.\n\nЭто займет около 30 секунд...");
+        $msg = $this->telegram->sendMessage($chatId, "⏳ *Обрабатываю твои ответы\.\.\.*\n\nМой ИИ\-алгоритм анализирует твое текущее состояние и формирует персональный Glow\-архетип\.\n\nЭто займет около 30 секунд\.\.\.");
         $processingMessageId = $msg['result']['message_id'] ?? null;
 
         // 2. Wait for 120 seconds

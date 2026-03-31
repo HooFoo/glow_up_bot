@@ -27,7 +27,7 @@ class OnboardingService
         ],
         [
             'id'   => 'body_stats',
-            'text' => 'Твой текущий вес и рост? (Например: 65/170)',
+            'text' => 'Твой текущий вес и рост? \(Например: 65/170\)',
             'type' => 'text',
         ],
         [
@@ -43,7 +43,7 @@ class OnboardingService
         ],
         [
             'id'   => 'last_period_date',
-            'text' => 'Когда начались последние месячные? (Например: 15.03 или 2026-03-15)\n\nЕсли цикл отсутствует — напиши «нет».',
+            'text' => 'Когда начались последние месячные? \(Например: 15\.03 или 2026\-03\-15\)\n\nЕсли цикл отсутствует — напиши «нет»\.',
             'type' => 'text',
         ],
     ];
@@ -59,7 +59,7 @@ class OnboardingService
      */
     public function start(int $chatId, int $userId): void
     {
-        $text = "Чтобы я могла давать тебе точные рекомендации, мне нужны твои базовые настройки.\n\nЭто займет 30 секунд, но сэкономит тебе часы жизни ✨";
+        $text = "Чтобы я могла давать тебе точные рекомендации, мне нужны твои базовые настройки\.\n\nЭто займет 30 секунд, но сэкономит тебе часы жизни ✨";
         $this->telegram->sendMessage($chatId, $text);
 
         $this->sendQuestion($chatId, $userId, 0);
@@ -83,7 +83,7 @@ class OnboardingService
         $userService->resetOnboarding($userId);
 
         // Send intro and start from question 0
-        $text = "✏️ <b>Редактирование профиля</b>\n\nДавай обновим твои данные. Ответь на несколько вопросов заново.";
+        $text = "✏️ *Редактирование профиля*\n\nДавай обновим твои данные\. Ответь на несколько вопросов заново\.";
         $this->telegram->sendMessage($chatId, $text);
 
         $this->sendQuestion($chatId, $userId, 0);
@@ -163,7 +163,7 @@ class OnboardingService
             $dateValue = $this->parseLastPeriodDate($text);
 
             if ($dateValue === null) {
-                $this->telegram->sendMessage($chatId, '❌ Не удалось распознать дату. Напиши в формате ДД.ММ (например: 15.03) или «нет», если цикл отсутствует.');
+                $this->telegram->sendMessage($chatId, '❌ Не удалось распознать дату\. Напиши в формате ДД\.ММ \(например: 15\.03\) или «нет», если цикл отсутствует\.');
                 return;
             }
 
@@ -229,7 +229,7 @@ class OnboardingService
         }
 
         $q = self::QUESTIONS[$index];
-        $text = "📋 <b>Настройка профиля</b>\n\n{$q['text']}";
+        $text = "📋 *Настройка профиля*\n\n{$q['text']}";
 
         $userService = new UserService();
 
@@ -262,9 +262,8 @@ class OnboardingService
     {
         $userService = new UserService();
         $user = $userService->findById($userId);
-        $name = $user['first_name'] ?? 'Подруга';
-
-        $text = "Привет, {$name}! ✨\n\nВыбери, с чего начнём сегодня:";
+        $name = TelegramApi::escapeMarkdownV2($user['first_name'] ?? 'Подруга');
+        $text = "Привет, {$name}\! ✨\n\nВыбери, с чего начнём сегодня:";
 
         $keyboard = TelegramApi::inlineKeyboard([
             [['text' => '🥗 Питание', 'callback_data' => 'mode_nutrition']],

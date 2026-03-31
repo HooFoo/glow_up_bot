@@ -74,9 +74,7 @@ class PersonaService
         // Send gift
         $this->sendGift($chatId, $persona);
 
-        // Send CTA / paywall message (replaced with Funnel)
-        $funnel = new FunnelService($this->telegram);
-        $funnel->start($chatId, $userId);
+        // The funnel used to start automatically here, but now it's triggered by a button in sendResult
     }
 
     private function sendResult(int $chatId, int $userId, string $persona): void
@@ -90,10 +88,15 @@ class PersonaService
         $text = $this->extractBlock($content, $blockKey);
 
         if (!$text) {
-            $text = "Твой архетип — {$info['emoji']} {$info['label']}!";
+            $labelEscaped = TelegramApi::escapeMarkdownV2($info['label']);
+            $text = "Твой архетип — {$info['emoji']} {$labelEscaped}\!";
         }
 
-        $this->telegram->sendMessage($chatId, $text);
+        $keyboard = TelegramApi::inlineKeyboard([
+            [['text' => '🚀 Создать персональный план выхода в прайм', 'callback_data' => 'start_funnel']]
+        ]);
+
+        $this->telegram->sendMessage($chatId, $text, $keyboard);
     }
 
     public function sendGift(int $chatId, string $persona): void
@@ -123,7 +126,7 @@ class PersonaService
             [['text' => '✨ ПОЛУЧИТЬ ДОСТУП', 'callback_data' => 'get_access']],
         ]);
 
-        $this->telegram->sendMessage($chatId, $text, $keyboard);
+        $this->telegram->sendMessage($chatId, TelegramApi::escapeMarkdownV2($text), $keyboard);
     }
 
     /**

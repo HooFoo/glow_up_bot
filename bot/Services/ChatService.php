@@ -106,7 +106,7 @@ class ChatService
         unlink($tmpFile);
 
         if (empty($text)) {
-            $this->telegram->sendMessage($chatId, 'Не удалось распознать голосовое сообщение 😔 Попробуй ещё раз или напиши текстом.');
+            $this->telegram->sendMessage($chatId, 'Не удалось распознать голосовое сообщение 😔 Попробуй ещё раз или напиши текстом\.');
             return;
         }
 

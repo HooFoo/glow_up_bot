@@ -43,7 +43,7 @@ class FunnelService
             [['text' => 'Состояние (стресс, ПМС)', 'callback_data' => 'funnel_ans_step1_stress']],
         ]);
 
-        $this->telegram->sendMessage($chatId, $text, $keyboard);
+        $this->telegram->sendMessage($chatId, TelegramApi::escapeMarkdownV2($text), $keyboard);
     }
 
     public function handleInput(int $chatId, int $userId, string $state, string $input): void
@@ -79,13 +79,13 @@ class FunnelService
         $this->userService->updateState($userId, 'funnel_step_3');
         $text2 = $this->textService->get('msg_step_2_context');
         if (!empty($text2)) {
-            $this->telegram->sendMessage($chatId, $text2);
+            $this->telegram->sendMessage($chatId, TelegramApi::escapeMarkdownV2($text2));
             sleep(1);
         }
 
         $text3 = $this->textService->get('msg_step_3_diagnostic');
         if (!empty($text3)) {
-            $this->telegram->sendMessage($chatId, $text3);
+            $this->telegram->sendMessage($chatId, TelegramApi::escapeMarkdownV2($text3));
         } else {
             // If skipped, move to step 4
             $this->advanceToStep4($chatId, $userId);
@@ -97,7 +97,7 @@ class FunnelService
         $this->userService->updateState($userId, 'funnel_step_5_offer');
         $text4 = $this->textService->get('msg_step_4_value');
         if (!empty($text4)) {
-            $this->telegram->sendMessage($chatId, $text4);
+            $this->telegram->sendMessage($chatId, TelegramApi::escapeMarkdownV2($text4));
             sleep(1);
         }
 
@@ -106,7 +106,7 @@ class FunnelService
             $keyboard = TelegramApi::inlineKeyboard([
                 [['text' => 'С Настей', 'callback_data' => 'funnel_path_nastya'], ['text' => 'Сама', 'callback_data' => 'funnel_path_self']]
             ]);
-            $this->telegram->sendMessage($chatId, $text5, $keyboard);
+            $this->telegram->sendMessage($chatId, TelegramApi::escapeMarkdownV2($text5), $keyboard);
         } else {
             // Skipped, advance to onboarding
             $this->advanceToOnboarding($chatId, $userId);
@@ -118,7 +118,7 @@ class FunnelService
         $this->userService->updateState($userId, 'funnel_step_self');
         $text = $this->textService->get('msg_step_self_path');
         if (!empty($text)) {
-            $this->telegram->sendMessage($chatId, $text);
+            $this->telegram->sendMessage($chatId, TelegramApi::escapeMarkdownV2($text));
         } else {
             $this->advanceToOnboarding($chatId, $userId);
         }
@@ -132,7 +132,7 @@ class FunnelService
             $keyboard = TelegramApi::inlineKeyboard([
                 [['text' => 'Иду!', 'callback_data' => 'funnel_nastya_go']]
             ]);
-            $this->telegram->sendMessage($chatId, $text, $keyboard);
+            $this->telegram->sendMessage($chatId, TelegramApi::escapeMarkdownV2($text), $keyboard);
         } else {
             $this->advanceToOnboarding($chatId, $userId);
         }
@@ -146,7 +146,7 @@ class FunnelService
             $keyboard = TelegramApi::inlineKeyboard([
                 [['text' => 'Оплата', 'callback_data' => 'funnel_nastya_pay']]
             ]);
-            $this->telegram->sendMessage($chatId, $text, $keyboard);
+            $this->telegram->sendMessage($chatId, TelegramApi::escapeMarkdownV2($text), $keyboard);
         } else {
             $this->advanceToOnboarding($chatId, $userId);
         }

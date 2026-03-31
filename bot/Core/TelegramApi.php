@@ -20,7 +20,7 @@ class TelegramApi
 
     // ─── Sending Messages ────────────────────────────────────────
 
-    public function sendMessage(int|string $chatId, string $text, ?array $replyMarkup = null, string $parseMode = 'HTML'): array
+    public function sendMessage(int|string $chatId, string $text, ?array $replyMarkup = null, string $parseMode = 'MarkdownV2'): array
     {
         if (trim($text) === '') {
             return ['ok' => false, 'error' => 'Message text is empty'];
@@ -72,7 +72,7 @@ class TelegramApi
         ];
         if ($caption) {
             $multipart[] = ['name' => 'caption', 'contents' => $caption];
-            $multipart[] = ['name' => 'parse_mode', 'contents' => 'HTML'];
+            $multipart[] = ['name' => 'parse_mode', 'contents' => 'MarkdownV2'];
         }
 
         $response = $this->http->post("{$this->baseUrl}/sendPhoto", [
@@ -183,7 +183,7 @@ class TelegramApi
             'chat_id'    => $chatId,
             'message_id' => $messageId,
             'text'       => $text,
-            'parse_mode' => 'HTML',
+            'parse_mode' => 'MarkdownV2',
         ];
         if ($replyMarkup) {
             $params['reply_markup'] = json_encode($replyMarkup);
@@ -197,6 +197,16 @@ class TelegramApi
             'chat_id'    => $chatId,
             'message_id' => $messageId,
         ]);
+    }
+
+    /**
+     * Escape special characters for Telegram MarkdownV2.
+     */
+    public static function escapeMarkdownV2(string $text): string
+    {
+        $search = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+        $replace = ['\_', '\*', '\[', '\]', '\(', '\)', '\~', '\`', '\>', '\#', '\+', '\-', '\=', '\|', '\{', '\}', '\.', '\!'];
+        return str_replace($search, $replace, $text);
     }
 
     // ─── Low-level ───────────────────────────────────────────────
