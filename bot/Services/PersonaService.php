@@ -12,6 +12,7 @@ class PersonaService
 {
     private Database $db;
     private TelegramApi $telegram;
+    private TextService $textService;
 
     // Persona thresholds: avg score ranges
     private const PERSONAS = [
@@ -21,18 +22,11 @@ class PersonaService
         'magnetic_prime'  => ['min' => 3.25, 'max' => 5.0,  'label' => 'Магнитная Прайм', 'emoji' => '💎'],
     ];
 
-    // Gift file mapping
-    private const GIFTS = [
-        'shadow_queen'    => 'shadow_queen_sos.pdf',
-        'iron_controller' => 'iron_controller_delegation.pdf',
-        'sleeping_muse'   => 'sleeping_muse_tracker.pdf',
-        'magnetic_prime'  => 'magnetic_prime_longevity.pdf',
-    ];
-
     public function __construct(TelegramApi $telegram)
     {
         $this->db = Database::getInstance();
         $this->telegram = $telegram;
+        $this->textService = new TextService();
     }
 
     /**
@@ -68,10 +62,10 @@ class PersonaService
         $userService->setPersona($userId, $persona);
         $userService->completeQuiz($userId);
 
-        // Send result message
+        // Send result message (image + text + CTA button)
         $this->sendResult($chatId, $userId, $persona);
 
-        // Send gift
+        // Send gift PDF
         $this->sendGift($chatId, $persona);
 
         // The funnel used to start automatically here, but now it's triggered by a button in sendResult
@@ -80,12 +74,10 @@ class PersonaService
     private function sendResult(int $chatId, int $userId, string $persona): void
     {
         $info = self::PERSONAS[$persona];
-        $messagesPath = Config::getProjectRoot() . '/bot/Texts/messages.md';
-        $content = file_get_contents($messagesPath);
-
-        // Try to find persona-specific result text
-        $blockKey = 'QUIZ_RESULT_' . $persona;
-        $text = $this->extractBlock($content, $blockKey);
+        $textKey = 'QUIZ_RESULT_' . $persona;
+        
+        // Fetch text from DB via TextService
+        $text = $this->textService->get($textKey);
 
         if (!$text) {
             $labelEscaped = TelegramApi::escapeMarkdownV2($info['label']);
@@ -96,17 +88,32 @@ class PersonaService
             [['text' => '🚀 Создать персональный план выхода в прайм', 'callback_data' => 'start_funnel']]
         ]);
 
-        $this->telegram->sendMessage($chatId, $text, $keyboard);
+        // Send image + text as caption
+        $imagePath = Config::getProjectRoot() . "/bot/assets/archetypes/{$persona}.png";
+        
+        if (file_exists($imagePath)) {
+            $this->telegram->sendPhoto($chatId, $imagePath, $text, $keyboard);
+        } else {
+            $this->telegram->sendMessage($chatId, $text, $keyboard);
+        }
     }
 
     public function sendGift(int $chatId, string $persona): void
     {
-        $filename = self::GIFTS[$persona] ?? null;
+        // Gift file mapping
+        $gifts = [
+            'shadow_queen'    => 'shadow_queen_sos.pdf',
+            'iron_controller' => 'iron_controller_delegation.pdf',
+            'sleeping_muse'   => 'sleeping_muse_tracker.pdf',
+            'magnetic_prime'  => 'magnetic_prime_longevity.pdf',
+        ];
+
+        $filename = $gifts[$persona] ?? null;
         if (!$filename) {
             return;
         }
 
-        $filePath = Config::getProjectRoot() . '/assets/gifts/' . $filename;
+        $filePath = Config::getProjectRoot() . '/bot/assets/gifts/' . $filename;
         if (file_exists($filePath)) {
             $this->telegram->sendDocument($chatId, $filePath, '🎁 Твой персональный подарок!');
         }
@@ -114,9 +121,7 @@ class PersonaService
 
     private function sendPaywallCta(int $chatId): void
     {
-        $messagesPath = Config::getProjectRoot() . '/bot/Texts/messages.md';
-        $content = file_get_contents($messagesPath);
-        $text = $this->extractBlock($content, 'PAYWALL_CTA');
+        $text = $this->textService->get('PAYWALL_CTA');
 
         if (!$text) {
             $text = 'Начни свой Glow Up прямо сейчас 👇';
@@ -127,19 +132,6 @@ class PersonaService
         ]);
 
         $this->telegram->sendMessage($chatId, TelegramApi::escapeMarkdownV2($text), $keyboard);
-    }
-
-    /**
-     * Extract a text block from messages.md by its key.
-     */
-    private function extractBlock(string $content, string $key): ?string
-    {
-        // Text blocks in messages.md are enclosed in ``` after ## KEY header
-        $pattern = '/## ' . preg_quote($key, '/') . '\n.*?```\n(.*?)```/su';
-        if (preg_match($pattern, $content, $m)) {
-            return trim($m[1]);
-        }
-        return null;
     }
 
     public static function getPersonaLabel(string $persona): string
