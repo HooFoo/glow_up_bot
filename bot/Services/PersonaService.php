@@ -121,17 +121,13 @@ class PersonaService
 
     private function sendPaywallCta(int $chatId): void
     {
-        $text = $this->textService->get('PAYWALL_CTA');
-
-        if (!$text) {
-            $text = 'Начни свой Glow Up прямо сейчас 👇';
-        }
+        $text = $this->textService->get('PAYWALL_CTA', 'Начни свой Glow Up прямо сейчас 👇');
 
         $keyboard = TelegramApi::inlineKeyboard([
             [['text' => '✨ ПОЛУЧИТЬ ДОСТУП', 'callback_data' => 'get_access']],
         ]);
 
-        $this->telegram->sendMessage($chatId, TelegramApi::escapeMarkdownV2($text), $keyboard);
+        $this->telegram->sendMessage($chatId, $text, $keyboard);
     }
 
     public static function getPersonaLabel(string $persona): string

@@ -145,7 +145,7 @@ class ProfileService
 
         // Load prompt template
         $textService = new TextService();
-        $promptTemplate = $textService->get('prompt_profile_update');
+        $promptTemplate = $textService->get('prompt_profile_update', '', true);
         $promptTemplate = str_replace('{{CURRENT_PROFILE_JSON}}', $currentProfile, $promptTemplate);
 
         $historyText = '';

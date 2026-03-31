@@ -45,7 +45,7 @@ class SummaryService
 
         // Build prompt
         $textService = new TextService();
-        $promptTemplate = $textService->get('prompt_summary_compression');
+        $promptTemplate = $textService->get('prompt_summary_compression', '', true);
         $promptTemplate = str_replace('{{PREVIOUS_SUMMARY}}', $previousSummary ?: '(нет предыдущего резюме)', $promptTemplate);
 
         $messagesText = '';

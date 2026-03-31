@@ -17,12 +17,19 @@ class TextService
 
     /**
      * Get text content by its key.
+     * Escapes for Telegram MarkdownV2 by default.
      */
-    public function get(string $key, string $default = ''): string
+    public function get(string $key, string $default = '', bool $raw = false): string
     {
         // Try fetching only active text first
         $row = $this->db->fetchOne('SELECT content FROM texts WHERE `key` = :key AND active = 1', [':key' => $key]);
-        return $row['content'] ?? $default;
+        $text = $row['content'] ?? $default;
+        
+        if ($raw) {
+            return $text;
+        }
+        
+        return \App\Core\TelegramApi::escapeMarkdownV2($text);
     }
 
     /**

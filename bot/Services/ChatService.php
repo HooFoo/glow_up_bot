@@ -143,7 +143,7 @@ class ChatService
         $textService = new TextService();
 
         // 1. Base system prompt
-        $base = $textService->get('prompt_base_system');
+        $base = $textService->get('prompt_base_system', '', true);
 
         // 2. Mode-specific prompt
         $modePromptKey = match ($mode) {
@@ -152,7 +152,7 @@ class ChatService
             'coach'      => 'prompt_coach_system',
             default      => 'prompt_nutrition_system',
         };
-        $modePrompt = $textService->get($modePromptKey);
+        $modePrompt = $textService->get($modePromptKey, '', true);
 
         // 3. User profile
         $profileService = new ProfileService();
