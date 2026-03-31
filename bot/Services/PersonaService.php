@@ -115,7 +115,10 @@ class PersonaService
 
         $filePath = Config::getProjectRoot() . '/bot/assets/gifts/' . $filename;
         if (file_exists($filePath)) {
-            $this->telegram->sendDocument($chatId, $filePath, '🎁 Твой персональный подарок!');
+            $keyboard = TelegramApi::inlineKeyboard([
+                [['text' => '✨ Получить персонального ассистента для выхода в прайм', 'callback_data' => 'start_funnel']]
+            ]);
+            $this->telegram->sendDocument($chatId, $filePath, '🎁 Твой персональный подарок\!', $keyboard);
         }
     }
 

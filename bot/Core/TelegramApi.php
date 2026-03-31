@@ -47,7 +47,7 @@ class TelegramApi
         return $result;
     }
 
-    public function sendDocument(int|string $chatId, string $filePath, ?string $caption = null): array
+    public function sendDocument(int|string $chatId, string $filePath, ?string $caption = null, ?array $replyMarkup = null): array
     {
         $multipart = [
             ['name' => 'chat_id', 'contents' => (string) $chatId],
@@ -55,6 +55,10 @@ class TelegramApi
         ];
         if ($caption) {
             $multipart[] = ['name' => 'caption', 'contents' => $caption];
+            $multipart[] = ['name' => 'parse_mode', 'contents' => 'MarkdownV2'];
+        }
+        if ($replyMarkup) {
+            $multipart[] = ['name' => 'reply_markup', 'contents' => json_encode($replyMarkup)];
         }
 
         $response = $this->http->post("{$this->baseUrl}/sendDocument", [
@@ -64,7 +68,7 @@ class TelegramApi
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    public function sendPhoto(int|string $chatId, string $filePath, ?string $caption = null): array
+    public function sendPhoto(int|string $chatId, string $filePath, ?string $caption = null, ?array $replyMarkup = null): array
     {
         $multipart = [
             ['name' => 'chat_id', 'contents' => (string) $chatId],
@@ -73,6 +77,9 @@ class TelegramApi
         if ($caption) {
             $multipart[] = ['name' => 'caption', 'contents' => $caption];
             $multipart[] = ['name' => 'parse_mode', 'contents' => 'MarkdownV2'];
+        }
+        if ($replyMarkup) {
+            $multipart[] = ['name' => 'reply_markup', 'contents' => json_encode($replyMarkup)];
         }
 
         $response = $this->http->post("{$this->baseUrl}/sendPhoto", [
