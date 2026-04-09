@@ -85,7 +85,7 @@ class PersonaService
         }
 
         $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => '🚀 Создать персональный план выхода в прайм', 'callback_data' => 'start_funnel']]
+            [['text' => '🚀 Собрать мой Glow Up план', 'callback_data' => 'start_funnel']]
         ]);
 
         // Send image + text as caption
@@ -116,7 +116,7 @@ class PersonaService
         $filePath = Config::getProjectRoot() . '/bot/assets/gifts/' . $filename;
         if (file_exists($filePath)) {
             $keyboard = TelegramApi::inlineKeyboard([
-                [['text' => '✨ Получить персонального ассистента для выхода в прайм', 'callback_data' => 'start_funnel']]
+                [['text' => '✨ Включить мой Прайм режим', 'callback_data' => 'start_funnel']]
             ]);
             $this->telegram->sendDocument($chatId, $filePath, '🎁 Твой персональный подарок\!', $keyboard);
         }
