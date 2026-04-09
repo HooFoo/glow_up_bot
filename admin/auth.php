@@ -65,6 +65,7 @@ function adminHeader(string $title, string $activePage = ''): void
         <a href="users.php" class="nav-link <?= $activePage === 'users' ? 'active' : '' ?>">👥 Пользователи</a>
         <a href="texts.php" class="nav-link <?= $activePage === 'texts' ? 'active' : '' ?>">📝 Тексты</a>
         <a href="logs.php" class="nav-link <?= $activePage === 'logs' ? 'active' : '' ?>">📋 Логи</a>
+        <a href="settings.php" class="nav-link <?= $activePage === 'settings' ? 'active' : '' ?>">⚙️ Настройки</a>
         <a href="?logout=1" class="nav-link logout">🚪 Выход</a>
     </nav>
     <main class="content">

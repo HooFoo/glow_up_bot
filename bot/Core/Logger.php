@@ -46,7 +46,20 @@ class Logger
 
     private function log(string $level, string $message, array $context = []): void
     {
-        if ((self::LEVELS[$level] ?? 0) < $this->minLevel) {
+        $minLevel = self::LEVELS[$level] ?? 0;
+        
+        // Check if level is enabled by environment config
+        $enabledByConfig = $minLevel >= $this->minLevel;
+        
+        // Check if level is force-enabled via Database settings
+        $enabledBySettings = false;
+        if ($level === 'info') {
+            $enabledBySettings = Settings::isEnabled('log_info_enabled');
+        } elseif ($level === 'debug') {
+            $enabledBySettings = Settings::isEnabled('log_debug_enabled');
+        }
+
+        if (!$enabledByConfig && !$enabledBySettings && $level !== 'error') {
             return;
         }
 

@@ -181,16 +181,47 @@ class OpenAiApi
 
     private function post(string $endpoint, array $body): array
     {
+        $requestId = bin2hex(random_bytes(4));
+        $logger = Logger::getInstance();
+        $model = $body['model'] ?? 'unknown';
+
         try {
+            // Log Request (Debug)
+            $logger->debug("OpenAI Request [{$requestId}]", [
+                'endpoint' => $endpoint,
+                'model'    => $model,
+                'body'     => $body
+            ]);
+
             $response = $this->http->post($endpoint, [
                 'json' => $body,
             ]);
 
-            return json_decode($response->getBody()->getContents(), true);
+            $contents = $response->getBody()->getContents();
+            $result = json_decode($contents, true);
+
+            // Log Response (Info)
+            $tokens = $result['usage'] ?? [];
+            $logger->info("OpenAI Response [{$requestId}]", [
+                'status' => $response->getStatusCode(),
+                'model'  => $result['model'] ?? $model,
+                'tokens' => [
+                    'prompt'     => $tokens['prompt_tokens'] ?? 0,
+                    'completion' => $tokens['completion_tokens'] ?? 0,
+                    'total'      => $tokens['total_tokens'] ?? 0
+                ]
+            ]);
+
+            // Log Response (Debug)
+            $logger->debug("OpenAI Raw Response [{$requestId}]", [
+                'body' => $result
+            ]);
+
+            return $result;
         } catch (\Throwable $e) {
-            Logger::getInstance()->error("OpenAI API error: {$endpoint}", [
+            $logger->error("OpenAI API error [{$requestId}]: {$endpoint}", [
                 'error' => $e->getMessage(),
-                'body'  => $body, // Added body for easier debugging
+                'body'  => $body,
             ]);
             return [];
         }

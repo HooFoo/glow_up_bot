@@ -220,13 +220,28 @@ class TelegramApi
 
     private function request(string $method, array $params = []): array
     {
+        $requestId = bin2hex(random_bytes(4));
+        $logger = Logger::getInstance();
+
         try {
             $response = $this->http->post("{$this->baseUrl}/{$method}", [
                 'form_params' => $params,
             ]);
-            return json_decode($response->getBody()->getContents(), true);
+            $result = json_decode($response->getBody()->getContents(), true);
+
+            // Log Telegram Response (Debug)
+            if ($logger) {
+                $logger->debug("Telegram API [{$requestId}]: {$method}", [
+                    'status' => $response->getStatusCode(),
+                    'ok'     => $result['ok'] ?? false,
+                    'error'  => $result['description'] ?? null,
+                    'params' => $params
+                ]);
+            }
+
+            return $result;
         } catch (\Throwable $e) {
-            Logger::getInstance()->error("Telegram API error: {$method}", [
+            $logger->error("Telegram API Exception [{$requestId}]: {$method}", [
                 'error'  => $e->getMessage(),
                 'params' => $params,
             ]);
