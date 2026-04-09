@@ -152,12 +152,14 @@ class OpenAiApi
     {
         $model = $body['model'] ?? '';
 
-        // Reasoning models (o1, o3) and newer generations (like the 'gpt-5' in logs) 
-        // do not support 'max_tokens' anymore.
-        $isReasoning = str_starts_with($model, 'o1') || str_starts_with($model, 'o3');
-        $isUnknownOrNewGen = !str_starts_with($model, 'gpt-3.5') && !str_starts_with($model, 'gpt-4');
-
-        if ($isReasoning || $isUnknownOrNewGen) {
+        // Reasoning models (o1, o3, gpt-5) 
+        // These models include reasoning tokens in the max_completion_tokens limit.
+        $isReasoning = str_starts_with($model, 'o1') || str_starts_with($model, 'o3') || str_starts_with($model, 'gpt-5');
+        
+        if ($isReasoning) {
+            // Give reasoning models more room (4x the requested tokens, min 4096)
+            $body['max_completion_tokens'] = max($maxTokens * 4, 4096);
+        } elseif (!str_starts_with($model, 'gpt-3.5') && !str_starts_with($model, 'gpt-4')) {
             $body['max_completion_tokens'] = $maxTokens;
         } else {
             $body['max_tokens'] = $maxTokens;

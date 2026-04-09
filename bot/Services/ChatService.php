@@ -43,6 +43,12 @@ class ChatService
 
         $reply = $this->openai->chat($context, 0.7, 1024);
 
+        if (empty(trim($reply))) {
+            \App\Core\Logger::getInstance()->error("Empty response from OpenAI (likely reasoning tokens limit reached)");
+            $this->telegram->sendMessage($chatId, "Извини, я слишком глубоко задумалась и не успела ответить 🥺 Попробуй еще раз\!");
+            return;
+        }
+
         // Save assistant message
         $this->saveMessage($userId, 'assistant', $reply, $mode);
 
@@ -78,6 +84,12 @@ class ChatService
         $systemPrompt = $this->buildSystemPrompt($userId, $mode);
 
         $reply = $this->openai->vision($imageData, 'image/jpeg', $prompt, $systemPrompt);
+
+        if (empty(trim($reply))) {
+            \App\Core\Logger::getInstance()->error("Empty vision response from OpenAI");
+            $this->telegram->sendMessage($chatId, "Не удалось проанализировать фото 😔 Попробуй ещё раз\!");
+            return;
+        }
 
         // Save messages
         $userMsgText = $caption ? "[Фото] {$caption}" : '[Фото]';
