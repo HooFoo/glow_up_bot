@@ -199,7 +199,7 @@ class SubscriptionService
 
     public function getStatsAllTime(): array
     {
-        return $this->db->fetch(
+        return $this->db->fetchOne(
             'SELECT 
                 COUNT(*) as total_links,
                 SUM(CASE WHEN status = "paid" THEN 1 ELSE 0 END) as total_paid,
@@ -211,7 +211,7 @@ class SubscriptionService
 
     public function getStatsLastMonth(): array
     {
-        return $this->db->fetch(
+        return $this->db->fetchOne(
             'SELECT 
                 COUNT(*) as total_links,
                 SUM(CASE WHEN status = "paid" THEN 1 ELSE 0 END) as total_paid,

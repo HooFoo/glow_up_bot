@@ -74,6 +74,14 @@ class Database
     }
 
     /**
+     * Fetch a single column value.
+     */
+    public function fetchColumn(string $sql, array $params = []): mixed
+    {
+        return $this->query($sql, $params)->fetchColumn();
+    }
+
+    /**
      * Insert and return last insert id.
      */
     public function insert(string $sql, array $params = []): int
