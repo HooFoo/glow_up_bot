@@ -40,6 +40,21 @@ class Config
         return (int) self::get('TELEGRAM_STARS_PRICE', 299);
     }
 
+    public static function getProdamusDomain(): string
+    {
+        return self::get('PRODAMUS_DOMAIN', '');
+    }
+
+    public static function getProdamusSecret(): string
+    {
+        return self::get('PRODAMUS_SECRET', '');
+    }
+
+    public static function getProdamusPrice(): int
+    {
+        return (int) self::get('PRODAMUS_PRICE_RUB', 2100);
+    }
+
     public static function getOpenAiKey(): string
     {
         return self::get('OPENAI_API_KEY', '');

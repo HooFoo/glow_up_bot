@@ -138,7 +138,7 @@ try {
     // ─── Access check (paywall) ─────────────────────────────────
     $subService = new SubscriptionService($telegram);
     if (!$subService->checkAccess($user)) {
-        $subService->sendPaywall($chatId);
+        $subService->sendPaywall($chatId, $userId);
         exit;
     }
 
@@ -209,7 +209,7 @@ function handleCommand(int $chatId, int $userId, string $text, array $user, Tele
 
         case '/subscribe':
             $subService = new SubscriptionService($telegram);
-            $subService->sendInvoice($chatId, $userId);
+            $subService->sendPaywall($chatId, $userId);
             break;
 
         case '/profile':
@@ -317,7 +317,7 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
     // Buy subscription
     if ($data === 'buy_subscription') {
         $subService = new SubscriptionService($telegram);
-        $subService->sendInvoice($chatId, $userId);
+        $subService->sendPaywall($chatId, $userId);
         return;
     }
 
