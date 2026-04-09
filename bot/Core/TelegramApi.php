@@ -15,7 +15,10 @@ class TelegramApi
     {
         $token = Config::getTelegramToken();
         $this->baseUrl = "https://api.telegram.org/bot{$token}";
-        $this->http = new Client(['timeout' => 30]);
+        $this->http = new Client([
+            'timeout' => 30,
+            'http_errors' => false // Handle 4xx/5xx manually
+        ]);
     }
 
     // ─── Sending Messages ────────────────────────────────────────
@@ -37,9 +40,9 @@ class TelegramApi
 
         $result = $this->request('sendMessage', $params);
 
-        // Fallback: If sending failed (e.g. formatting error in MarkdownV2 or HTML),
+        // Fallback: If sending failed (likely due to MarkdownV2/HTML formatting errors),
         // try sending the message as plain text (no parse_mode).
-        if (isset($result['ok']) && $result['ok'] === false) {
+        if ($result['ok'] === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
             unset($params['parse_mode']);
             return $this->request('sendMessage', $params);
         }
@@ -227,7 +230,9 @@ class TelegramApi
             $response = $this->http->post("{$this->baseUrl}/{$method}", [
                 'form_params' => $params,
             ]);
-            $result = json_decode($response->getBody()->getContents(), true);
+            
+            $contents = $response->getBody()->getContents();
+            $result = json_decode($contents, true) ?? ['ok' => false, 'description' => 'Invalid JSON response'];
 
             // Log Telegram Response (Debug)
             if ($logger) {
@@ -239,13 +244,22 @@ class TelegramApi
                 ]);
             }
 
+            // If not OK, but it's a known formatting error, we return result and let sendMessage handle fallback
+            // We don't log it as an [ERROR] here yet because it might be recovered.
+            if (($result['ok'] ?? false) === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
+                $logger->info("Telegram formatting error [{$requestId}]: {$result['description']}");
+            } elseif (($result['ok'] ?? false) === false) {
+                // Other business errors
+                $logger->error("Telegram API Error [{$requestId}]: {$result['description']}", ['params' => $params]);
+            }
+
             return $result;
         } catch (\Throwable $e) {
-            $logger->error("Telegram API Exception [{$requestId}]: {$method}", [
+            $logger->error("Telegram Network/System Exception [{$requestId}]: {$method}", [
                 'error'  => $e->getMessage(),
                 'params' => $params,
             ]);
-            return ['ok' => false, 'error' => $e->getMessage()];
+            return ['ok' => false, 'description' => $e->getMessage()];
         }
     }
 }
