@@ -56,8 +56,8 @@ class Settings
         $db = Database::getInstance();
         $db->execute(
             'INSERT INTO settings (key_name, value_text) VALUES (:key, :val) 
-             ON DUPLICATE KEY UPDATE value_text = :val',
-            [':key' => $key, ':val' => $value]
+             ON DUPLICATE KEY UPDATE value_text = :val_update',
+            [':key' => $key, ':val' => $value, ':val_update' => $value]
         );
         self::$cache[$key] = $value;
     }
