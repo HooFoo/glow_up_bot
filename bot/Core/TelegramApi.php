@@ -212,8 +212,9 @@ class TelegramApi
     /**
      * Escape special characters for Telegram MarkdownV2.
      */
-    public static function escapeMarkdownV2(string $text): string
+    public static function escapeMarkdownV2(mixed $text): string
     {
+        $text = (string)($text ?? '');
         $search = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
         $replace = ['\_', '\*', '\[', '\]', '\(', '\)', '\~', '\`', '\>', '\#', '\+', '\-', '\=', '\|', '\{', '\}', '\.', '\!'];
         return str_replace($search, $replace, $text);
