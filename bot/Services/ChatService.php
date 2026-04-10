@@ -53,7 +53,7 @@ class ChatService
         $this->saveMessage($userId, 'assistant', $reply, $mode);
 
         // Send reply
-        $this->telegram->sendMessage($chatId, $reply, null, 'MarkdownV2');
+        $this->telegram->sendMessage($chatId, $this->ensureMarkdownV1($reply), null, 'Markdown');
 
         // Increment message count and check counters
         $newCount = $userService->incrementMessageCount($userId);
@@ -96,7 +96,7 @@ class ChatService
         $this->saveMessage($userId, 'user', $userMsgText, $mode, 'photo');
         $this->saveMessage($userId, 'assistant', $reply, $mode);
 
-        $this->telegram->sendMessage($chatId, $reply, null, 'MarkdownV2');
+        $this->telegram->sendMessage($chatId, $this->ensureMarkdownV1($reply), null, 'Markdown');
 
         $newCount = $userService->incrementMessageCount($userId);
         $this->checkCounters($userId, $newCount, $mode);
@@ -179,7 +179,24 @@ class ChatService
         $systemPrompt = str_replace('{{USER_PROFILE_JSON}}', $profileJson, $systemPrompt);
         $systemPrompt = str_replace('{{CONVERSATION_SUMMARY}}', $summary ?: '(Нет предыдущего резюме)', $systemPrompt);
 
+        // Add instruction about markdown
+        $systemPrompt .= "\n\nВАЖНО: Для выделения текста (жирный) используй только одну звездочку: *жирный*, не используй двойные **.";
+
         return $systemPrompt;
+    }
+
+    /**
+     * Convert standard Markdown to Telegram Markdown V1 and fix common issues.
+     */
+    private function ensureMarkdownV1(string $text): string
+    {
+        // 1. Convert **bold** to *bold* (V1 uses single asterisk for bold)
+        $text = str_replace('**', '*', $text);
+        
+        // 2. Escape reserved symbols for V1 (*, _, [, `) if they are not part of entities?
+        // Actually V1 is very lenient. The biggest issue is unclosed * or _.
+        
+        return $text;
     }
 
     // ─── Message Storage ─────────────────────────────────────────

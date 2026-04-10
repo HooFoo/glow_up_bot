@@ -43,6 +43,13 @@ class TelegramApi
         // Fallback: If sending failed (likely due to MarkdownV2/HTML formatting errors),
         // try sending the message as plain text (no parse_mode).
         if ($result['ok'] === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
+            $logger = \App\Core\Logger::getInstance();
+            if ($logger) {
+                $logger->warning("Telegram formatting error, falling back to plain text", [
+                    'error' => $result['description'],
+                    'chat_id' => $chatId
+                ]);
+            }
             unset($params['parse_mode']);
             return $this->request('sendMessage', $params);
         }
@@ -246,9 +253,9 @@ class TelegramApi
             }
 
             // If not OK, but it's a known formatting error, we return result and let sendMessage handle fallback
-            // We don't log it as an [ERROR] here yet because it might be recovered.
+            // We don't log it as an [ERROR] or [INFO] here yet because it's usually recovered in sendMessage.
             if (($result['ok'] ?? false) === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
-                $logger->info("Telegram formatting error [{$requestId}]: {$result['description']}");
+                $logger->debug("Telegram formatting error [{$requestId}]: {$result['description']}");
             } elseif (($result['ok'] ?? false) === false) {
                 // Other business errors
                 $logger->error("Telegram API Error [{$requestId}]: {$result['description']}", ['params' => $params]);
