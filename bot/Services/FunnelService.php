@@ -50,8 +50,12 @@ class FunnelService
     {
         if ($state === 'funnel_step_1') {
             $this->advanceToStep2($chatId, $userId);
+        } elseif ($state === 'funnel_step_2') {
+            $this->advanceToStep3($chatId, $userId);
         } elseif ($state === 'funnel_step_3') {
             $this->advanceToStep4($chatId, $userId);
+        } elseif ($state === 'funnel_step_4') {
+            $this->advanceToStep5($chatId, $userId);
         } elseif ($state === 'funnel_step_self') {
             $this->advanceToOnboarding($chatId, $userId);
         }
@@ -76,39 +80,47 @@ class FunnelService
 
     private function advanceToStep2(int $chatId, int $userId): void
     {
-        $this->userService->updateState($userId, 'funnel_step_3');
-        $text2 = $this->textService->get('msg_step_2_context');
-        if (!empty($text2)) {
-            $this->telegram->sendMessage($chatId, $text2);
-            sleep(1);
-        }
-
-        $text3 = $this->textService->get('msg_step_3_diagnostic');
-        if (!empty($text3)) {
-            $this->telegram->sendMessage($chatId, $text3);
+        $this->userService->updateState($userId, 'funnel_step_2');
+        $text = $this->textService->get('msg_step_2_context');
+        if (!empty($text)) {
+            $this->telegram->sendMessage($chatId, $text);
         } else {
-            // If skipped, move to step 4
+            $this->advanceToStep3($chatId, $userId);
+        }
+    }
+
+    private function advanceToStep3(int $chatId, int $userId): void
+    {
+        $this->userService->updateState($userId, 'funnel_step_3');
+        $text = $this->textService->get('msg_step_3_diagnostic');
+        if (!empty($text)) {
+            $this->telegram->sendMessage($chatId, $text);
+        } else {
             $this->advanceToStep4($chatId, $userId);
         }
     }
 
     private function advanceToStep4(int $chatId, int $userId): void
     {
-        $this->userService->updateState($userId, 'funnel_step_5_offer');
-        $text4 = $this->textService->get('msg_step_4_value');
-        if (!empty($text4)) {
-            $this->telegram->sendMessage($chatId, $text4);
-            sleep(1);
+        $this->userService->updateState($userId, 'funnel_step_4');
+        $text = $this->textService->get('msg_step_4_value');
+        if (!empty($text)) {
+            $this->telegram->sendMessage($chatId, $text);
+        } else {
+            $this->advanceToStep5($chatId, $userId);
         }
+    }
 
-        $text5 = $this->textService->get('msg_step_5_soft_offer');
-        if (!empty($text5)) {
+    private function advanceToStep5(int $chatId, int $userId): void
+    {
+        $this->userService->updateState($userId, 'funnel_step_5_offer');
+        $text = $this->textService->get('msg_step_5_soft_offer');
+        if (!empty($text)) {
             $keyboard = TelegramApi::inlineKeyboard([
                 [['text' => 'С Настей', 'callback_data' => 'funnel_path_nastya'], ['text' => 'Сама', 'callback_data' => 'funnel_path_self']]
             ]);
-            $this->telegram->sendMessage($chatId, $text5, $keyboard);
+            $this->telegram->sendMessage($chatId, $text, $keyboard);
         } else {
-            // Skipped, advance to onboarding
             $this->advanceToOnboarding($chatId, $userId);
         }
     }
