@@ -6,7 +6,7 @@ namespace App\Core;
 
 class Logger
 {
-    private const LEVELS = ['debug' => 0, 'info' => 1, 'error' => 2];
+    private const LEVELS = ['debug' => 0, 'info' => 1, 'warning' => 2, 'error' => 3];
 
     private static ?self $instance = null;
     private string $logDir;
@@ -18,7 +18,7 @@ class Logger
         if (!is_dir($this->logDir)) {
             @mkdir($this->logDir, 0777, true);
         }
-        $this->minLevel = self::LEVELS[Config::getLogLevel()] ?? 2;
+        $this->minLevel = self::LEVELS[Config::getLogLevel()] ?? 3;
     }
 
     public static function getInstance(): self
@@ -37,6 +37,11 @@ class Logger
     public function info(string $message, array $context = []): void
     {
         $this->log('info', $message, $context);
+    }
+
+    public function warning(string $message, array $context = []): void
+    {
+        $this->log('warning', $message, $context);
     }
 
     public function error(string $message, array $context = []): void

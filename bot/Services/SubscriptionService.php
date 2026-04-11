@@ -175,6 +175,17 @@ class SubscriptionService
         );
     }
 
+    public function getSubscriptionsPerDay(int $days = 10): array
+    {
+        return $this->db->fetchAll(
+            'SELECT DATE(starts_at) AS day, COUNT(*) AS count 
+             FROM subscriptions 
+             WHERE starts_at >= DATE_SUB(CURDATE(), INTERVAL :days DAY) 
+             GROUP BY DATE(starts_at) ORDER BY day ASC',
+            [':days' => $days]
+        );
+    }
+
     public function getLinksPerDay(int $days = 10): array
     {
         return $this->db->fetchAll(
