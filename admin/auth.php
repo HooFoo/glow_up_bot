@@ -64,6 +64,7 @@ function adminHeader(string $title, string $activePage = ''): void
         <a href="index.php" class="nav-link <?= $activePage === 'dashboard' ? 'active' : '' ?>">📊 Dashboard</a>
         <a href="users.php" class="nav-link <?= $activePage === 'users' ? 'active' : '' ?>">👥 Пользователи</a>
         <a href="payments.php" class="nav-link <?= $activePage === 'payments' ? 'active' : '' ?>">💳 Платежи</a>
+        <a href="broadcasts.php" class="nav-link <?= $activePage === 'broadcasts' ? 'active' : '' ?>">📢 Рассылки</a>
         <a href="texts.php" class="nav-link <?= $activePage === 'texts' ? 'active' : '' ?>">📝 Тексты</a>
         <a href="logs.php" class="nav-link <?= $activePage === 'logs' ? 'active' : '' ?>">📋 Логи</a>
         <a href="settings.php" class="nav-link <?= $activePage === 'settings' ? 'active' : '' ?>">⚙️ Настройки</a>
