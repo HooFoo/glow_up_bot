@@ -18,7 +18,7 @@ function sendMessageSafe(TelegramApi $telegram, TextService $textService, int $c
 {
     $text = $textService->get($key);
     if (!empty($text)) {
-        $text = TelegramApi::escapeMarkdownV2($text); // Mailing texts from DB are plain text/HTML, converting to safe V2
+        // TextService::get() already escapes for MarkdownV2, so we don't need to do it again here.
         if (!empty($buttons)) {
             $telegram->sendMessage($chatId, $text, TelegramApi::inlineKeyboard($buttons));
         } else {

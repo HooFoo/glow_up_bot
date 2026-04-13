@@ -270,10 +270,36 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
         return;
     }
 
-    // Funnel answers
-    if (str_starts_with($data, 'funnel_')) {
+    // Funnel answers & Trial buttons
+    if (str_starts_with($data, 'funnel_') || str_starts_with($data, 'trial_')) {
         $funnel = new FunnelService($telegram);
-        // The user array is passed to handleCallback
+        
+        // Map trial buttons to funnel paths
+        if ($data === 'trial_nastya') {
+            $funnel->handleCallback($chatId, $userId, 'funnel_step_5_offer', 'funnel_path_nastya');
+            return;
+        }
+        if ($data === 'trial_bot') {
+            $funnel->handleCallback($chatId, $userId, 'funnel_step_5_offer', 'funnel_path_self');
+            return;
+        }
+        
+        if ($data === 'trial_pdf') {
+            $personaService = new PersonaService($telegram);
+            $personaService->sendGift($chatId, $user['persona'] ?? 'sleeping_muse');
+            return;
+        }
+        
+        if ($data === 'trial_demo') {
+            $userService = new UserService();
+            $userService->updateState($userId, 'demo_prompt');
+            
+            $textService = new \App\Services\TextService();
+            $demoText = $textService->get('msg_trial_demo_prompt_info', "Вот твой демо\-промпт для самостоятельной работы ✨");
+            $telegram->sendMessage($chatId, $demoText);
+            return;
+        }
+
         $funnel->handleCallback($chatId, $userId, $user['state'] ?? '', $data);
         return;
     }
