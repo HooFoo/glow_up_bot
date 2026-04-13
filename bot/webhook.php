@@ -331,7 +331,7 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
 
             $labels = ['nutrition' => '🥗 Питание', 'cosmetics' => '✨ Косметика', 'coach' => '🧘 Коучинг'];
             $labelEscaped = TelegramApi::escapeMarkdownV2($labels[$mode]);
-            $telegram->sendMessage($chatId, "Режим переключён на: *{$labelEscaped}*\n\nЗадавай вопросы\!");
+            $telegram->sendMessage($chatId, "Режим переключён на: *{$labelEscaped}*\n\n Чем я могу тебе помочь? Спроси что угодно и я отвечу\!");
         }
         return;
     }
