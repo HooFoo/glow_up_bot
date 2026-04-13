@@ -42,17 +42,14 @@ foreach ($users as $user) {
     $now = new \DateTime();
     $daysSince = $createdAt->diff($now)->days;
 
-    // Trial Period (Days 1 to 4)
+    // Trial Period (Days 1 to 2)
     if ($daysSince == 1) {
         sendMessageSafe($telegram, $textService, $chatId, 'msg_day_1_value');
     } elseif ($daysSince == 2) {
+        // Send Day 2 value
         sendMessageSafe($telegram, $textService, $chatId, 'msg_day_2_value');
-        sendMessageSafe($telegram, $textService, $chatId, 'msg_day_2_ritual');
-    } elseif ($daysSince == 3) {
-        sendMessageSafe($telegram, $textService, $chatId, 'msg_day_3_value');
-        sendMessageSafe($telegram, $textService, $chatId, 'msg_day_3_breath');
-        sendMessageSafe($telegram, $textService, $chatId, 'msg_day_3_heart_shift');
-    } elseif ($daysSince == 4) {
+        
+        // Final Trial notice
         sendMessageSafe($telegram, $textService, $chatId, 'msg_trial_end');
         sendMessageSafe($telegram, $textService, $chatId, 'msg_trial_end_paths', [
             [['text' => 'С Настей (10 000р)', 'callback_data' => 'trial_nastya'], ['text' => 'С ботом (1990р)', 'callback_data' => 'trial_bot']],
@@ -66,8 +63,8 @@ foreach ($users as $user) {
     }
 
     // Post-trial FREE logic
-    if ($daysSince > 4 && !$isPaid) {
-        $postTrialDays = $daysSince - 4;
+    if ($daysSince > 2 && !$isPaid) {
+        $postTrialDays = $daysSince - 2;
         
         if ($state === 'demo_prompt') {
             if ($postTrialDays == 1) {
@@ -80,16 +77,12 @@ foreach ($users as $user) {
                 sendMessageSafe($telegram, $textService, $chatId, 'msg_active_day_2_nudge');
             } elseif ($postTrialDays == 4) {
                 sendMessageSafe($telegram, $textService, $chatId, 'msg_active_day_4_upgrade');
-            } elseif ($postTrialDays == 6) {
-                sendMessageSafe($telegram, $textService, $chatId, 'msg_free_upgrade_offer');
             }
         } else {
-            if ($postTrialDays == 3) {
+            if ($postTrialDays == 2) {
                 sendMessageSafe($telegram, $textService, $chatId, 'msg_return_day_3');
-            } elseif ($postTrialDays == 5) {
+            } elseif ($postTrialDays == 4) {
                 sendMessageSafe($telegram, $textService, $chatId, 'msg_return_day_5');
-            } elseif ($postTrialDays == 7) {
-                sendMessageSafe($telegram, $textService, $chatId, 'msg_return_day_7');
             }
         }
     }
