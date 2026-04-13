@@ -94,7 +94,7 @@ class UserService
 
     public function incrementMessageCount(int $userId): int
     {
-        $this->db->execute('UPDATE users SET message_count = message_count + 1 WHERE id = :id', [':id' => $userId]);
+        $this->db->execute('UPDATE users SET message_count = message_count + 1, last_message_at = NOW() WHERE id = :id', [':id' => $userId]);
         $user = $this->findById($userId);
         return (int) ($user['message_count'] ?? 0);
     }
