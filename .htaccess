@@ -15,6 +15,7 @@ RewriteRule ^admin($|/) - [L]
 
 # Разрешаем вебхук
 RewriteRule ^bot/webhook\.php$ - [L]
+RewriteRule ^bot/prodamus_callback\.php$ - [L]
 
 # Разрешаем иконку
 RewriteRule ^favicon\.ico$ - [L]
