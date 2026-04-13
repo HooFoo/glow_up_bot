@@ -53,6 +53,23 @@ $telegram = new TelegramApi();
 $chatService = new ChatService($telegram);
 $messageCount = $chatService->getMessageCount($userId);
 
+// Fetch Automated Mailings (from bot/mailing.php)
+$db = \App\Core\Database::getInstance();
+$automatedMailings = $db->fetchAll(
+    'SELECT * FROM sent_mailings WHERE user_id = :uid ORDER BY sent_at DESC',
+    [':uid' => $userId]
+);
+
+// Fetch Manual Broadcasts
+$manualBroadcasts = $db->fetchAll(
+    'SELECT bl.*, b.message_text 
+     FROM broadcast_logs bl 
+     JOIN broadcasts b ON bl.broadcast_id = b.id 
+     WHERE bl.user_id = :uid 
+     ORDER BY bl.sent_at DESC',
+    [':uid' => $userId]
+);
+
 adminHeader('Пользователь: ' . htmlspecialchars($user['first_name']), 'users');
 ?>
 
@@ -109,6 +126,52 @@ adminHeader('Пользователь: ' . htmlspecialchars($user['first_name'])
         <div class="field"><span class="field-label">Режим:</span> <span class="field-value"><?= $user['active_mode'] ?? '—' ?></span></div>
     </div>
 </div>
+
+<div class="profile-grid">
+    <div class="profile-card">
+        <h3>📢 История рассылок</h3>
+        <div class="mailing-list">
+            <?php
+            $allMailings = [];
+            foreach ($automatedMailings as $am) $allMailings[] = ['type' => 'Auto', 'key' => $am['mailing_key'], 'date' => $am['sent_at'], 'status' => 'sent'];
+            foreach ($manualBroadcasts as $mb) $allMailings[] = ['type' => 'Manual', 'key' => mb_strimwidth($mb['message_text'], 0, 40, "..."), 'date' => $mb['sent_at'], 'status' => $mb['status']];
+            
+            usort($allMailings, fn($a, $b) => strcmp($b['date'], $a['date']));
+
+            if (empty($allMailings)): ?>
+                <div class="no-data">Сообщений еще не было</div>
+            <?php else: ?>
+                <?php foreach ($allMailings as $m): ?>
+                    <div class="mailing-item">
+                        <div class="m-info">
+                            <span class="m-type"><?= $m['type'] ?></span>
+                            <span class="m-key"><?= htmlspecialchars($m['key']) ?></span>
+                        </div>
+                        <div class="m-meta">
+                            <span class="m-date"><?= date('d.m.y H:i', strtotime($m['date'])) ?></span>
+                            <span class="m-status status-<?= $m['status'] ?>"><?= $m['status'] ?></span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<style>
+.mailing-list { max-height: 400px; overflow-y: auto; }
+.mailing-item { border-bottom: 1px solid #333; padding: 10px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+.mailing-item:last-child { border-bottom: none; }
+.m-info { display: flex; flex-direction: column; gap: 4px; }
+.m-type { font-size: 10px; text-transform: uppercase; background: #333; color: #fff; padding: 2px 4px; border-radius: 4px; width: fit-content; }
+.m-key { font-size: 13px; color: #e0e0e0; }
+.m-meta { text-align: right; display: flex; flex-direction: column; gap: 4px; }
+.m-date { font-size: 11px; color: #888; }
+.m-status { font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+.status-sent { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+.status-failed { background: rgba(244, 67, 54, 0.2); color: #f44336; }
+.no-data { padding: 20px; text-align: center; color: #666; font-style: italic; }
+</style>
 
 <?php if ($profile): ?>
 <div class="profile-card" style="margin-bottom: 24px;">
