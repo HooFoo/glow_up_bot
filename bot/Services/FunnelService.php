@@ -82,7 +82,7 @@ class FunnelService
                 (new ProfileService())->addFact($userId, 'Выбран путь: прохождение с Настей');
             } elseif ($data === 'funnel_path_self') {
                 $this->sendStepSelfPath($chatId, $userId);
-                (new ProfileService())->addFact($userId, 'Выбран путь: самостоятельное прохождение');
+                (new ProfileService())->addFact($userId, 'Выбран путь: самостоятельное прохождение с ботом');
             }
         } elseif ($state === 'funnel_step_nastya_offer' && $data === 'funnel_nastya_go') {
             $this->sendStepNastyaClose($chatId, $userId);
@@ -130,7 +130,7 @@ class FunnelService
         $text = $this->textService->get('msg_step_5_soft_offer');
         if (!empty($text)) {
             $keyboard = TelegramApi::inlineKeyboard([
-                [['text' => 'С Настей', 'callback_data' => 'funnel_path_nastya'], ['text' => 'Сама', 'callback_data' => 'funnel_path_self']]
+                [['text' => 'С Настей (10 000 Р)', 'callback_data' => 'funnel_path_nastya'], ['text' => 'С ботом (1990 Р)', 'callback_data' => 'funnel_path_self']]
             ]);
             $this->telegram->sendMessage($chatId, $text, $keyboard);
         } else {

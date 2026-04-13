@@ -55,7 +55,7 @@ foreach ($users as $user) {
     } elseif ($daysSince == 4) {
         sendMessageSafe($telegram, $textService, $chatId, 'msg_trial_end');
         sendMessageSafe($telegram, $textService, $chatId, 'msg_trial_end_paths', [
-            [['text' => 'С Настей', 'callback_data' => 'trial_nastya'], ['text' => 'С ботом', 'callback_data' => 'trial_bot']],
+            [['text' => 'С Настей (10 000р)', 'callback_data' => 'trial_nastya'], ['text' => 'С ботом (1990р)', 'callback_data' => 'trial_bot']],
             [['text' => 'Гайд', 'callback_data' => 'trial_pdf'], ['text' => 'Демо-промпт', 'callback_data' => 'trial_demo']]
         ]);
         
