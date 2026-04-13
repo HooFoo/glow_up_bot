@@ -34,7 +34,7 @@ class ProdamusService
         // For standard "payment form" integration, the callback signature is the key security part.
         
         $queryString = http_build_query($params);
-        return "https://{$domain}.prodamus.ru/pay?{$queryString}";
+        return "https://{$domain}.payform.ru/?{$queryString}";
     }
 
     /**
