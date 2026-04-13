@@ -3,7 +3,7 @@
 # Путь к проекту
 # Находим путь к директории скрипта (корень проекта)
 PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-echo $PROJECT_PATH
+
 PHP_BIN=$(which php)
 WORKER_SCRIPT="$PROJECT_PATH/bot/broadcast_worker.php"
 LOG_FILE="$PROJECT_PATH/logs/broadcast.log"
