@@ -84,17 +84,13 @@ class PersonaService
             $text = "Твой архетип — {$info['emoji']} {$labelEscaped}\!";
         }
 
-        $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => '🚀 Собрать мой Glow Up план', 'callback_data' => 'start_funnel']]
-        ]);
-
         // Send image + text as caption
         $imagePath = Config::getProjectRoot() . "/bot/assets/archetypes/{$persona}.png";
         
         if (file_exists($imagePath)) {
-            $this->telegram->sendPhoto($chatId, $imagePath, $text, $keyboard);
+            $this->telegram->sendPhoto($chatId, $imagePath, $text);
         } else {
-            $this->telegram->sendMessage($chatId, $text, $keyboard);
+            $this->telegram->sendMessage($chatId, $text);
         }
     }
 

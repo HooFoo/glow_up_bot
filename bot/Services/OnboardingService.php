@@ -12,6 +12,7 @@ class OnboardingService
 {
     private Database $db;
     private TelegramApi $telegram;
+    private TextService $textService;
 
     private const QUESTIONS = [
         [
@@ -35,10 +36,11 @@ class OnboardingService
             'text'    => 'Есть ли у тебя установленные дефициты или особенности?',
             'type'    => 'buttons',
             'options' => [
-                'low_iron_protein' => '🥩 Низкий ферритин / белок',
+                'low_iron_protein' => '🥩 Да, есть установленные дефициты',
                 'breastfeeding'    => '🍼 Я на ГВ (кормящая мама)',
                 'sugar_craving'    => '🍬 Тяга к сладкому',
                 'optimization'     => '✅ Всё в норме, хочу оптимизировать',
+                'no_answer'        => 'Я не знаю',
             ],
         ],
         [
@@ -52,6 +54,7 @@ class OnboardingService
     {
         $this->db = Database::getInstance();
         $this->telegram = $telegram;
+        $this->textService = new TextService();
     }
 
     /**
@@ -229,7 +232,7 @@ class OnboardingService
         }
 
         $q = self::QUESTIONS[$index];
-        $text = "📋 *Настройка профиля*\n\n{$q['text']}";
+        $text = "📋 *Настройка профиля* \n\n {$q['text']}";
 
         $userService = new UserService();
 
@@ -253,6 +256,12 @@ class OnboardingService
 
         $userService = new UserService();
         $userService->completeOnboarding($userId);
+
+        // Send confirmation message
+        $successText = $this->textService->get('ONBOARDING_FINISH_SUCCESS');
+        if ($successText) {
+            $this->telegram->sendMessage($chatId, $successText);
+        }
 
         // Send main menu
         $this->sendMainMenu($chatId, $userId);

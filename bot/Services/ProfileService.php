@@ -40,6 +40,10 @@ class ProfileService
             }
         }
 
+        // Fetch existing profile to preserve known_facts
+        $existingRow = $this->db->fetchOne('SELECT profile_json FROM user_profiles WHERE user_id = :uid', [':uid' => $userId]);
+        $existingProfile = $existingRow ? json_decode($existingRow['profile_json'], true) : [];
+
         // Parse weight/height
         $bodyStats = $answerMap['body_stats'] ?? '';
         $weight = null;
@@ -63,15 +67,14 @@ class ProfileService
             'bmi'           => $bmi,
             'health_features' => $answerMap['health_features'] ?? null,
             'last_period_date' => $answerMap['last_period_date'] ?? null,
-            'known_facts'   => [],
+            'known_facts'   => $existingProfile['known_facts'] ?? [],
             'last_profile_update_at' => date('c'),
         ];
 
         $json = json_encode($profile, JSON_UNESCAPED_UNICODE);
 
         // Upsert
-        $existing = $this->db->fetchOne('SELECT id FROM user_profiles WHERE user_id = :uid', [':uid' => $userId]);
-        if ($existing) {
+        if ($existingRow) {
             $this->db->execute(
                 'UPDATE user_profiles SET profile_json = :json, version = version + 1 WHERE user_id = :uid',
                 [':json' => $json, ':uid' => $userId]
@@ -81,6 +84,48 @@ class ProfileService
                 'INSERT INTO user_profiles (user_id, profile_json) VALUES (:uid, :json)',
                 [':uid' => $userId, ':json' => $json]
             );
+        }
+    }
+
+    /**
+     * Immediately add a fact to user's known_facts in profile_json.
+     * Used for capturing funnel answers or other immediate insights.
+     */
+    public function addFact(int $userId, string $fact): void
+    {
+        $row = $this->db->fetchOne('SELECT profile_json FROM user_profiles WHERE user_id = :uid', [':uid' => $userId]);
+        $profile = $row ? json_decode($row['profile_json'], true) : [];
+
+        if (!isset($profile['known_facts'])) {
+            $profile['known_facts'] = [];
+        }
+
+        // Avoid adding the same exact fact twice
+        if (!in_array($fact, $profile['known_facts'], true)) {
+            $profile['known_facts'][] = $fact;
+            $profile['last_profile_update_at'] = date('c');
+            
+            // Ensure we have other basics if creating for the first time
+            if (!isset($profile['persona'])) {
+                $userService = new UserService();
+                $user = $userService->findById($userId);
+                $profile['persona'] = $user['persona'] ?? null;
+                $profile['persona_label'] = PersonaService::getPersonaLabel($user['persona'] ?? '');
+            }
+
+            $json = json_encode($profile, JSON_UNESCAPED_UNICODE);
+
+            if ($row) {
+                $this->db->execute(
+                    'UPDATE user_profiles SET profile_json = :json, version = version + 1 WHERE user_id = :uid',
+                    [':json' => $json, ':uid' => $userId]
+                );
+            } else {
+                $this->db->insert(
+                    'INSERT INTO user_profiles (user_id, profile_json) VALUES (:uid, :json)',
+                    [':uid' => $userId, ':json' => $json]
+                );
+            }
         }
     }
 

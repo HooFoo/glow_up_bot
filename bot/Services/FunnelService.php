@@ -64,12 +64,25 @@ class FunnelService
     public function handleCallback(int $chatId, int $userId, string $state, string $data): void
     {
         if ($state === 'funnel_step_1' && str_starts_with($data, 'funnel_ans_step1_')) {
+            $answer = substr($data, 17); // energy, skin, food, stress
+            $mapping = [
+                'energy' => 'Интерес: Энергия / усталость',
+                'skin'   => 'Интерес: Кожа / внешний вид',
+                'food'   => 'Интерес: Питание / тело',
+                'stress' => 'Интерес: Состояние (стресс, ПМС)',
+            ];
+            $fact = $mapping[$answer] ?? null;
+            if ($fact) {
+                (new ProfileService())->addFact($userId, $fact);
+            }
             $this->advanceToStep2($chatId, $userId);
         } elseif ($state === 'funnel_step_5_offer') {
             if ($data === 'funnel_path_nastya') {
                 $this->sendStepNastyaOffer($chatId, $userId);
+                (new ProfileService())->addFact($userId, 'Выбран путь: прохождение с Настей');
             } elseif ($data === 'funnel_path_self') {
                 $this->sendStepSelfPath($chatId, $userId);
+                (new ProfileService())->addFact($userId, 'Выбран путь: самостоятельное прохождение');
             }
         } elseif ($state === 'funnel_step_nastya_offer' && $data === 'funnel_nastya_go') {
             $this->sendStepNastyaClose($chatId, $userId);
