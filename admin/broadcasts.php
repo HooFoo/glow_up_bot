@@ -42,6 +42,7 @@ adminHeader('Рассылки', 'broadcasts');
                 $f = json_decode($b['filters'], true);
                 $filterParts = [];
                 if (!empty($f['payment_status'])) $filterParts[] = ($f['payment_status'] === 'paid' ? '💰 Платники' : '🆓 Бесплатные');
+                if (!empty($f['persona'])) $filterParts[] = "🎭 " . htmlspecialchars($f['persona']);
                 if (!empty($f['goal'])) $filterParts[] = "🎯 " . htmlspecialchars($f['goal']);
                 if (!empty($f['reg_from'])) $filterParts[] = "📅 От " . $f['reg_from'];
                 echo implode(', ', $filterParts) ?: '—';

@@ -117,6 +117,12 @@ class BroadcastService
             $sql .= " AND JSON_UNQUOTE(JSON_EXTRACT(up.profile_json, '$.health_features')) LIKE :health";
             $params[':health'] = '%' . $filters['health'] . '%';
         }
+
+        // Archetype (Persona)
+        if (!empty($filters['persona'])) {
+            $sql .= " AND u.persona = :persona";
+            $params[':persona'] = $filters['persona'];
+        }
     }
 
     public function updateProgress(int $broadcastId, int $sent, int $failed, ?string $status = null): void

@@ -21,6 +21,7 @@ $filters = [
     'last_msg_before' => $_GET['last_msg_before'] ?? '',
     'goal'            => $_GET['goal'] ?? '',
     'health'          => $_GET['health'] ?? '',
+    'persona'         => $_GET['persona'] ?? '',
 ];
 
 $count = $broadcastService->countUsers($filters);

@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'last_msg_before' => $_POST['last_msg_before'] ?? '',
         'goal'            => $_POST['goal'] ?? '',
         'health'          => $_POST['health'] ?? '',
+        'persona'         => $_POST['persona'] ?? '',
     ];
 
     if (!empty($message)) {
@@ -48,6 +49,17 @@ adminHeader('Создать рассылку', 'broadcasts');
                         <option value="">Все</option>
                         <option value="paid">Платные</option>
                         <option value="free">Бесплатные / Истекшие</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Архетип (Персона)</label>
+                    <select name="persona" class="filter-input">
+                        <option value="">Все</option>
+                        <option value="shadow_queen">👑 Тенистая Королева</option>
+                        <option value="iron_controller">⚙️ Железный Контролер</option>
+                        <option value="sleeping_muse">🎨 Спящая Муза</option>
+                        <option value="magnetic_prime">💎 Магнитная Прайм</option>
                     </select>
                 </div>
 
