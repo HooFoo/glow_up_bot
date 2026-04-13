@@ -14,16 +14,33 @@ $telegram = new TelegramApi();
 $textService = new TextService();
 $subService = new SubscriptionService($telegram);
 
-function sendMessageSafe(TelegramApi $telegram, TextService $textService, int $chatId, string $key, array $buttons = []): void
+function sendMessageSafe(Database $db, TelegramApi $telegram, TextService $textService, int $userId, int $chatId, string $contentKey, string $trackingKey = null, array $buttons = []): void
 {
-    $text = $textService->get($key);
+    $trackingKey = $trackingKey ?: $contentKey;
+
+    // Check if already sent
+    $exists = $db->fetchOne(
+        'SELECT id FROM sent_mailings WHERE user_id = :uid AND mailing_key = :key',
+        [':uid' => $userId, ':key' => $trackingKey]
+    );
+    if ($exists) {
+        return;
+    }
+
+    $text = $textService->get($contentKey);
     if (!empty($text)) {
-        // TextService::get() already escapes for MarkdownV2, so we don't need to do it again here.
+        // TextService::get() already escapes for MarkdownV2
         if (!empty($buttons)) {
             $telegram->sendMessage($chatId, $text, TelegramApi::inlineKeyboard($buttons));
         } else {
             $telegram->sendMessage($chatId, $text);
         }
+
+        // Record as sent
+        $db->insert(
+            'INSERT INTO sent_mailings (user_id, mailing_key) VALUES (:uid, :key)',
+            [':uid' => $userId, ':key' => $trackingKey]
+        );
     }
 }
 
@@ -44,21 +61,21 @@ foreach ($users as $user) {
 
     // Trial Period (Days 1 to 2)
     if ($daysSince == 1) {
-        sendMessageSafe($telegram, $textService, $chatId, 'msg_day_1_value');
+        sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_day_1_value');
     } elseif ($daysSince == 2) {
         // Send Day 2 value
-        sendMessageSafe($telegram, $textService, $chatId, 'msg_day_2_value');
+        sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_day_2_value');
         
         // Final Trial notice
-        sendMessageSafe($telegram, $textService, $chatId, 'msg_trial_end');
-        sendMessageSafe($telegram, $textService, $chatId, 'msg_trial_end_paths', [
+        sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_trial_end');
+        sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_trial_end_paths', null, [
             [['text' => 'С Настей (10 000р)', 'callback_data' => 'trial_nastya'], ['text' => 'С ботом (1990р)', 'callback_data' => 'trial_bot']],
             [['text' => 'Гайд', 'callback_data' => 'trial_pdf'], ['text' => 'Демо-промпт', 'callback_data' => 'trial_demo']]
         ]);
         
         // Also send limited mode intro if not paid
         if (!$isPaid) {
-            sendMessageSafe($telegram, $textService, $chatId, 'msg_limited_mode_intro');
+            sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_limited_mode_intro');
         }
     }
 
@@ -68,28 +85,29 @@ foreach ($users as $user) {
         
         if ($state === 'demo_prompt') {
             if ($postTrialDays == 1) {
-                sendMessageSafe($telegram, $textService, $chatId, 'msg_after_demo_followup');
+                sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_after_demo_followup');
             } elseif ($postTrialDays == 2) {
-                sendMessageSafe($telegram, $textService, $chatId, 'msg_return_offer');
+                sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_return_offer');
             }
         } elseif ($isActive) {
             if ($postTrialDays == 2) {
-                sendMessageSafe($telegram, $textService, $chatId, 'msg_active_day_2_nudge');
+                sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_active_day_2_nudge');
             } elseif ($postTrialDays == 4) {
-                sendMessageSafe($telegram, $textService, $chatId, 'msg_active_day_4_upgrade');
+                sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_active_day_4_upgrade');
             }
         } else {
             if ($postTrialDays == 2) {
-                sendMessageSafe($telegram, $textService, $chatId, 'msg_return_day_3');
+                sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_return_day_3');
             } elseif ($postTrialDays == 4) {
-                sendMessageSafe($telegram, $textService, $chatId, 'msg_return_day_5');
+                sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_return_day_5');
             }
         }
     }
 
     // PAID logic
     if ($isPaid && $daysSince > 0 && $daysSince % 30 == 0) {
-        sendMessageSafe($telegram, $textService, $chatId, 'msg_paid_month_offer');
+        // For recurring messages, we include the day number in the tracking key
+        sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_paid_month_offer', 'msg_paid_month_offer_' . $daysSince);
     }
 }
 
