@@ -197,6 +197,17 @@ class SubscriptionService
         );
     }
 
+    public function getPaidByLinkDate(int $days = 10): array
+    {
+        return $this->db->fetchAll(
+            'SELECT DATE(created_at) AS day, COUNT(*) AS count 
+             FROM payment_logs 
+             WHERE status = "paid" AND created_at >= DATE_SUB(CURDATE(), INTERVAL :days DAY) 
+             GROUP BY DATE(created_at) ORDER BY day ASC',
+            [':days' => $days]
+        );
+    }
+
     public function getPaidPerDay(int $days = 10): array
     {
         return $this->db->fetchAll(

@@ -18,7 +18,7 @@ $renewalPercent = $subService->getRenewalPercentage();
 
 // Charts data (10 days)
 $linksData = $subService->getLinksPerDay(10);
-$paidData = $subService->getPaidPerDay(10);
+$paidData = $subService->getPaidByLinkDate(10);
 
 // Log table
 $page = (int) ($_GET['page'] ?? 1);

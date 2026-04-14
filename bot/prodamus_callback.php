@@ -84,7 +84,9 @@ if (!$prodamus->verifySignature($data, $signature)) {
 $logger->info("Prodamus callback signature verified [ID: {$requestId}]");
 
 // Required fields
-$orderId = (string)($data['order_id'] ?? '');
+// Note: Prodamus returns its internal ID in 'order_id' 
+// and our system's ID (passed during link generation) in 'order_num'.
+$orderId = (string)($data['order_num'] ?? $data['order_id'] ?? '');
 $userId = (int) ($data['customer_extra'] ?? 0);
 $sum = (float) ($data['sum'] ?? 0);
 
