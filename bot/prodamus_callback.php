@@ -62,20 +62,20 @@ if (empty($signature) && function_exists('getallheaders')) {
     }
 }
 
-if (empty($input) || empty($signature)) {
-    $logger->error("Prodamus callback error [ID: {$requestId}]: missing body or signature", [
-        'has_input' => !empty($input),
+if (empty($data) || empty($signature)) {
+    $logger->error("Prodamus callback error [ID: {$requestId}]: missing data or signature", [
+        'has_data' => !empty($data),
         'has_signature' => !empty($signature)
     ]);
     http_response_code(400);
-    exit('Missing data');
+    exit('Missing data or signature');
 }
 
 $prodamus = new ProdamusService();
-if (!$prodamus->verifySignature($input, $signature)) {
+if (!$prodamus->verifySignature($data, $signature)) {
     $logger->error("Prodamus callback error [ID: {$requestId}]: invalid signature", [
         'received' => $signature,
-        'body' => $input
+        'data' => $data
     ]);
     http_response_code(403);
     exit('Invalid signature');

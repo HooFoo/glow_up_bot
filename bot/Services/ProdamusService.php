@@ -39,19 +39,48 @@ class ProdamusService
 
     /**
      * Verify the signature of the incoming callback from Prodamus.
-     * Prodamus sends the signature in the 'Sign' header.
-     * The signature is HMAC-SHA256 of the raw POST body.
+     * Prodamus uses a specific sorting and normalization algorithm for signatures.
      */
-    public function verifySignature(string $rawBody, string $receivedSignature): bool
+    public function verifySignature(array $data, string $receivedSignature): bool
     {
         $secret = Config::getProdamusSecret();
         if (empty($secret)) {
             return false;
         }
 
-        // Prodamus uses HMAC-SHA256
-        $expectedSignature = hash_hmac('sha256', $rawBody, $secret);
+        // Strip "v2." prefix if present
+        if (str_starts_with($receivedSignature, 'v2.')) {
+            $receivedSignature = substr($receivedSignature, 3);
+        }
+
+        $dataToSign = $data;
+        // 1. Convert all values to strings recursively
+        array_walk_recursive($dataToSign, function(&$v) {
+            $v = strval($v);
+        });
+
+        // 2. Sort keys recursively
+        $this->recursiveSort($dataToSign);
+
+        // 3. Encode to JSON with specific flags
+        $json = json_encode($dataToSign, JSON_UNESCAPED_UNICODE);
+
+        // 4. Calculate HMAC
+        $expectedSignature = hash_hmac('sha256', $json, $secret);
         
-        return hash_equals($expectedSignature, $receivedSignature);
+        return hash_equals(strtolower($expectedSignature), strtolower($receivedSignature));
+    }
+
+    /**
+     * Recursive ksort for signature calculation.
+     */
+    private function recursiveSort(array &$data): void
+    {
+        ksort($data, SORT_REGULAR);
+        foreach ($data as &$arr) {
+            if (is_array($arr)) {
+                $this->recursiveSort($arr);
+            }
+        }
     }
 }
