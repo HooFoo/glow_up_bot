@@ -41,15 +41,17 @@ class TextService
         $params = [];
 
         if ($search) {
-            $query .= ' WHERE `key` LIKE :search OR `title` LIKE :search OR `content` LIKE :search';
-            $params[':search'] = '%' . $search . '%';
+            $query .= ' WHERE `key` LIKE :s1 OR `title` LIKE :s2 OR `content` LIKE :s3';
+            $params[':s1'] = '%' . $search . '%';
+            $params[':s2'] = '%' . $search . '%';
+            $params[':s3'] = '%' . $search . '%';
         }
 
         $allowedSort = ['id', 'key', 'title', 'updated_at'];
         $orderBy = in_array($orderBy, $allowedSort) ? $orderBy : 'title';
         $orderDir = strtoupper($orderDir) === 'DESC' ? 'DESC' : 'ASC';
 
-        $query .= " ORDER BY {$orderBy} {$orderDir}";
+        $query .= " ORDER BY `{$orderBy}` {$orderDir}";
 
         return $this->db->fetchAll($query, $params);
     }
