@@ -87,6 +87,17 @@ class UserService
         $this->db->execute('UPDATE users SET onboarding_completed_at = NOW(), state = :state WHERE id = :id', [':state' => 'active', ':id' => $userId]);
     }
 
+    public function acceptTerms(int $userId): void
+    {
+        $this->db->execute('UPDATE users SET terms_accepted_at = NOW() WHERE id = :id', [':id' => $userId]);
+    }
+
+    public function hasAcceptedTerms(int $userId): bool
+    {
+        $user = $this->findById($userId);
+        return !empty($user['terms_accepted_at']);
+    }
+
     public function resetOnboarding(int $userId): void
     {
         $this->db->execute('UPDATE users SET onboarding_completed_at = NULL, state = :state WHERE id = :id', [':state' => 'quiz_done', ':id' => $userId]);

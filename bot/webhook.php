@@ -79,6 +79,14 @@ try {
     $userId = (int) $user['id'];
     $state = $user['state'] ?? 'new';
 
+    // ─── Legal terms check ───────────────────────────────────────
+    if (!$userService->hasAcceptedTerms($userId)) {
+        if (!($callback && $data === 'accept_terms')) {
+            sendLegalTerms($chatId, $telegram);
+            exit;
+        }
+    }
+
     // ─── Handle successful payment ──────────────────────────────
     if ($message && isset($message['successful_payment'])) {
         $subService = new SubscriptionService($telegram);
@@ -261,6 +269,14 @@ function handleCommand(int $chatId, int $userId, string $text, array $user, Tele
 
 function handleCallback(int $chatId, int $userId, string $data, array $user, TelegramApi $telegram): void
 {
+    // Legal terms acceptance
+    if ($data === 'accept_terms') {
+        $userService = new UserService();
+        $userService->acceptTerms($userId);
+        sendWelcome($chatId, $telegram);
+        return;
+    }
+
     // Quiz answers
     if (str_starts_with($data, 'quiz_')) {
         $quiz = new QuizService($telegram);
@@ -390,6 +406,22 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
         sendMainMenu($chatId, $user, $telegram);
         return;
     }
+}
+
+function sendLegalTerms(int $chatId, TelegramApi $telegram): void
+{
+    $textService = new \App\Services\TextService();
+    $text = $textService->get('msg_legal_terms');
+
+    if (!$text) {
+        $text = "Нажимая на кнопку и отвечая на сообщения в чат-боте, вы принимаете условия оферты и выражаете согласие на обработку персональных данных...";
+    }
+
+    $keyboard = TelegramApi::inlineKeyboard([
+        [['text' => $textService->get('btn_accept_terms', 'Принимаю'), 'callback_data' => 'accept_terms']],
+    ]);
+
+    $telegram->sendMessage($chatId, $text, $keyboard, 'HTML');
 }
 
 function sendWelcome(int $chatId, TelegramApi $telegram): void
