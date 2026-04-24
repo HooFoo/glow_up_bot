@@ -13,6 +13,26 @@ $error = '';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $action = isset($_GET['action']) ? $_GET['action'] : 'list';
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'title';
+$dir = isset($_GET['dir']) ? $_GET['dir'] : 'ASC';
+
+function sortLink(string $column, string $label, string $currentSort, string $currentDir, string $search): string
+{
+    $nextDir = ($column === $currentSort && $currentDir === 'ASC') ? 'DESC' : 'ASC';
+    $activeClass = ($column === $currentSort) ? 'active' : '';
+    $icon = '';
+    if ($column === $currentSort) {
+        $icon = $currentDir === 'ASC' ? ' ↑' : ' ↓';
+    }
+    
+    $url = "?sort={$column}&dir={$nextDir}";
+    if ($search) {
+        $url .= "&search=" . urlencode($search);
+    }
+    
+    return "<a href=\"{$url}\" class=\"sort-link {$activeClass}\">" . htmlspecialchars($label) . "<span class=\"sort-icon\">{$icon}</span></a>";
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     $id = (int)$_POST['id'];
@@ -31,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     }
 }
 
-$texts = $textService->getAll();
+$texts = $textService->getAll($search, $sort, $dir);
 $editingText = $id ? $textService->findById($id) : null;
 
 adminHeader('Управление текстами', 'texts');
@@ -122,24 +142,44 @@ adminHeader('Управление текстами', 'texts');
     </script>
 
 <?php else: ?>
+    <div class="filter-bar">
+        <form method="GET" class="search-form">
+            <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Поиск по ключу или тексту..." class="search-input">
+            <button type="submit" class="btn btn-primary">Найти</button>
+            <?php if ($search): ?>
+                <a href="texts.php" class="btn btn-outline">Сброс</a>
+            <?php endif; ?>
+        </form>
+    </div>
+
     <div class="data-table-container">
         <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width: 60px;">ID</th>
-                    <th>Превью сообщения</th>
-                    <th>Ключ</th>
-                    <th>Последнее обновление</th>
+                    <th style="width: 60px;"><?= sortLink('id', 'ID', $sort, $dir, $search) ?></th>
+                    <th><?= sortLink('title', 'Название / Превью', $sort, $dir, $search) ?></th>
+                    <th><?= sortLink('key', 'Ключ', $sort, $dir, $search) ?></th>
+                    <th><?= sortLink('updated_at', 'Обновлено', $sort, $dir, $search) ?></th>
                     <th style="width: 120px; text-align: right;">Действия</th>
                 </tr>
             </thead>
             <tbody>
+                <?php if (empty($texts)): ?>
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        Тексты не найдены
+                    </td>
+                </tr>
+                <?php endif; ?>
                 <?php foreach ($texts as $text): ?>
                 <tr>
                     <td><?= $text['id'] ?></td>
-                    <td><strong><?= htmlspecialchars(mb_strlen($text['content']) > 80 ? mb_substr($text['content'], 0, 80) . '...' : $text['content']) ?></strong></td>
-                    <td style="font-family: monospace; color: #9e9e9e; font-size: 12px;"><?= htmlspecialchars($text['key']) ?></td>
-                    <td style="color: #9e9e9e; font-size: 13px;"><?= date('d.m.Y H:i', strtotime($text['updated_at'])) ?></td>
+                    <td>
+                        <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);"><?= htmlspecialchars($text['title']) ?></div>
+                        <div style="color: var(--text-secondary); font-size: 12px;"><?= htmlspecialchars(mb_strlen($text['content']) > 100 ? mb_substr($text['content'], 0, 100) . '...' : $text['content']) ?></div>
+                    </td>
+                    <td style="font-family: monospace; color: var(--accent-primary); font-size: 12px;"><?= htmlspecialchars($text['key']) ?></td>
+                    <td style="color: var(--text-secondary); font-size: 13px; white-space: nowrap;"><?= date('d.m.Y H:i', strtotime($text['updated_at'])) ?></td>
                     <td style="text-align: right;">
                         <a href="?action=edit&id=<?= $text['id'] ?>" class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;">Изменить</a>
                     </td>

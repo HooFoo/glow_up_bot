@@ -12,6 +12,7 @@ class QuizService
 {
     private Database $db;
     private TelegramApi $telegram;
+    private TextService $textService;
     private array $questions = [];
 
     // Question IDs в порядке отправки
@@ -29,6 +30,7 @@ class QuizService
     {
         $this->db = Database::getInstance();
         $this->telegram = $telegram;
+        $this->textService = new TextService();
         $this->loadQuestions();
     }
 
@@ -139,7 +141,8 @@ class QuizService
         $total = count(self::QUESTION_IDS);
         
         // Formatting with MarkdownV2
-        $text = "❓ *Вопрос {$questionNumber}/{$total}*\n";
+        $header = sprintf($this->textService->get('msg_quiz_header', "❓ *Вопрос %d/%d*"), $questionNumber, $total);
+        $text = "{$header}\n";
         $text .= "*«" . TelegramApi::escapeMarkdownV2($question['text']) . "»*\n\n";
         
         $buttons = [];
@@ -195,7 +198,8 @@ class QuizService
         @set_time_limit(180); // Ensure the script has enough time for the simulation
 
         // 1. Send "Processing" message
-        $msg = $this->telegram->sendMessage($chatId, "⏳ *Обрабатываю твои ответы\.\.\.*\n\nМой ИИ\-алгоритм анализирует твое текущее состояние и формирует персональный Glow\-архетип\.\n\nЭто займет около 30 секунд\.\.\.");
+        $processingText = $this->textService->get('msg_quiz_processing', "⏳ *Обрабатываю твои ответы\.\.\.*\n\nМой ИИ\-алгоритм анализирует твое текущее состояние и формирует персональный Glow\-архетип\.\n\nЭто займет около 30 секунд\.\.\.");
+        $msg = $this->telegram->sendMessage($chatId, $processingText);
         $processingMessageId = $msg['result']['message_id'] ?? null;
 
         // 2. Wait for 120 seconds

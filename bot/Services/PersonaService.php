@@ -81,7 +81,7 @@ class PersonaService
 
         if (!$text) {
             $labelEscaped = TelegramApi::escapeMarkdownV2($info['label']);
-            $text = "Твой архетип — {$info['emoji']} {$labelEscaped}\!";
+            $text = sprintf($this->textService->get('msg_persona_result_prefix', 'Твой архетип — %s %s\!'), $info['emoji'], $labelEscaped);
         }
 
         // Send image + text as caption
@@ -112,9 +112,9 @@ class PersonaService
         $filePath = Config::getProjectRoot() . '/bot/assets/gifts/' . $filename;
         if (file_exists($filePath)) {
             $keyboard = TelegramApi::inlineKeyboard([
-                [['text' => '✨ Включить мой Прайм режим', 'callback_data' => 'start_funnel']]
+                [['text' => $this->textService->get('btn_activate_prime', '✨ Включить мой Прайм режим'), 'callback_data' => 'start_funnel']]
             ]);
-            $this->telegram->sendDocument($chatId, $filePath, '🎁 Твой персональный подарок\!', $keyboard);
+            $this->telegram->sendDocument($chatId, $filePath, $this->textService->get('msg_gift_caption', '🎁 Твой персональный подарок\!'), $keyboard);
         }
     }
 
@@ -123,7 +123,7 @@ class PersonaService
         $text = $this->textService->get('PAYWALL_CTA', 'Начни свой Glow Up прямо сейчас 👇');
 
         $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => '✨ ПОЛУЧИТЬ ДОСТУП', 'callback_data' => 'get_access']],
+            [['text' => $this->textService->get('btn_get_access', '✨ ПОЛУЧИТЬ ДОСТУП'), 'callback_data' => 'get_access']],
         ]);
 
         $this->telegram->sendMessage($chatId, $text, $keyboard);

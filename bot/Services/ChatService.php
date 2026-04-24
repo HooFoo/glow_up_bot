@@ -14,12 +14,14 @@ class ChatService
     private Database $db;
     private OpenAiApi $openai;
     private TelegramApi $telegram;
+    private TextService $textService;
 
     public function __construct(TelegramApi $telegram)
     {
         $this->db = Database::getInstance();
         $this->openai = new OpenAiApi();
         $this->telegram = $telegram;
+        $this->textService = new TextService();
     }
 
     /**
@@ -45,7 +47,7 @@ class ChatService
 
         if (empty(trim($reply))) {
             \App\Core\Logger::getInstance()->error("Empty response from OpenAI (likely reasoning tokens limit reached)");
-            $this->telegram->sendMessage($chatId, "Извини, я слишком глубоко задумалась и не успела ответить 🥺 Попробуй еще раз\!");
+            $this->telegram->sendMessage($chatId, $this->textService->get('msg_chat_error_empty', "Извини, я слишком глубоко задумалась и не успела ответить 🥺 Попробуй еще раз\!"));
             return;
         }
 
@@ -80,14 +82,14 @@ class ChatService
         unlink($tmpFile);
 
         // Build vision prompt
-        $prompt = $caption ?: 'Что ты видишь на этом фото? Проанализируй с учётом моего профиля.';
+        $prompt = $caption ?: $this->textService->get('msg_chat_vision_prompt_default', 'Что ты видишь на этом фото? Проанализируй с учётом моего профиля\.');
         $systemPrompt = $this->buildSystemPrompt($userId, $mode);
 
         $reply = $this->openai->vision($imageData, 'image/jpeg', $prompt, $systemPrompt);
 
         if (empty(trim($reply))) {
             \App\Core\Logger::getInstance()->error("Empty vision response from OpenAI");
-            $this->telegram->sendMessage($chatId, "Не удалось проанализировать фото 😔 Попробуй ещё раз\!");
+            $this->telegram->sendMessage($chatId, $this->textService->get('msg_chat_vision_error', "Не удалось проанализировать фото 😔 Попробуй ещё раз\!"));
             return;
         }
 
@@ -118,7 +120,7 @@ class ChatService
         unlink($tmpFile);
 
         if (empty($text)) {
-            $this->telegram->sendMessage($chatId, 'Не удалось распознать голосовое сообщение 😔 Попробуй ещё раз или напиши текстом\.');
+            $this->telegram->sendMessage($chatId, $this->textService->get('msg_chat_voice_error', 'Не удалось распознать голосовое сообщение 😔 Попробуй ещё раз или напиши текстом\.'));
             return;
         }
 
@@ -152,10 +154,8 @@ class ChatService
 
     private function buildSystemPrompt(int $userId, string $mode): string
     {
-        $textService = new TextService();
-
         // 1. Base system prompt
-        $base = $textService->get('prompt_base_system', '', true);
+        $base = $this->textService->get('prompt_base_system', '', true);
 
         // 2. Mode-specific prompt
         $modePromptKey = match ($mode) {
@@ -164,7 +164,7 @@ class ChatService
             'coach'      => 'prompt_coach_system',
             default      => 'prompt_nutrition_system',
         };
-        $modePrompt = $textService->get($modePromptKey, '', true);
+        $modePrompt = $this->textService->get($modePromptKey, '', true);
 
         // 3. User profile
         $profileService = new ProfileService();
@@ -177,7 +177,7 @@ class ChatService
         // Compose
         $systemPrompt = $base . "\n\n---\n\n" . $modePrompt;
         $systemPrompt = str_replace('{{USER_PROFILE_JSON}}', $profileJson, $systemPrompt);
-        $systemPrompt = str_replace('{{CONVERSATION_SUMMARY}}', $summary ?: '(Нет предыдущего резюме)', $systemPrompt);
+        $systemPrompt = str_replace('{{CONVERSATION_SUMMARY}}', $summary ?: $this->textService->get('msg_chat_no_summary', '(Нет предыдущего резюме)'), $systemPrompt);
 
         // Add instruction about markdown
         $systemPrompt .= "\n\nВАЖНО: Для выделения текста (жирный) используй только одну звездочку: *жирный*, не используй двойные **.";

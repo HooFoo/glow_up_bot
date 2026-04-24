@@ -69,8 +69,8 @@ foreach ($users as $user) {
         // Final Trial notice
         sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_trial_end');
         sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_trial_end_paths', null, [
-            [['text' => 'С Настей (10 000р)', 'callback_data' => 'trial_nastya'], ['text' => 'С ботом (1990р)', 'callback_data' => 'trial_bot']],
-            [['text' => 'Гайд', 'callback_data' => 'trial_pdf'], ['text' => 'Демо-промпт', 'callback_data' => 'trial_demo']]
+            [['text' => $textService->get('btn_trial_nastya', 'С Настей (10 000р)'), 'callback_data' => 'trial_nastya'], ['text' => $textService->get('btn_trial_bot', 'С ботом (1990р)'), 'callback_data' => 'trial_bot']],
+            [['text' => $textService->get('btn_trial_pdf', 'Гайд'), 'callback_data' => 'trial_pdf'], ['text' => $textService->get('btn_trial_demo', 'Демо-промпт'), 'callback_data' => 'trial_demo']]
         ]);
         
         // Also send limited mode intro if not paid

@@ -35,9 +35,23 @@ class TextService
     /**
      * Get all texts for administration.
      */
-    public function getAll(): array
+    public function getAll(string $search = '', string $orderBy = 'title', string $orderDir = 'ASC'): array
     {
-        return $this->db->fetchAll('SELECT * FROM texts ORDER BY title ASC');
+        $query = 'SELECT * FROM texts';
+        $params = [];
+
+        if ($search) {
+            $query .= ' WHERE `key` LIKE :search OR `title` LIKE :search OR `content` LIKE :search';
+            $params[':search'] = '%' . $search . '%';
+        }
+
+        $allowedSort = ['id', 'key', 'title', 'updated_at'];
+        $orderBy = in_array($orderBy, $allowedSort) ? $orderBy : 'title';
+        $orderDir = strtoupper($orderDir) === 'DESC' ? 'DESC' : 'ASC';
+
+        $query .= " ORDER BY {$orderBy} {$orderDir}";
+
+        return $this->db->fetchAll($query, $params);
     }
 
     /**

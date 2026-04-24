@@ -84,7 +84,8 @@ try {
         $subService = new SubscriptionService($telegram);
         $subService->handlePayment($userId, $message['successful_payment']);
 
-        $telegram->sendMessage($chatId, "🎉 Подписка активирована\! Добро пожаловать в Prime Glow ✨");
+        $textService = new \App\Services\TextService();
+        $telegram->sendMessage($chatId, $textService->get('msg_subscription_activated', "🎉 Подписка активирована\! Добро пожаловать в Prime Glow ✨"));
 
         // If onboarding not done yet, start it
         if (empty($user['onboarding_completed_at'])) {
@@ -126,12 +127,14 @@ try {
 
     // Quiz not done → prompt to start
     if (empty($user['quiz_completed_at'])) {
-        $telegram->sendMessage($chatId, 'Давай сначала пройдём короткий тест ✨ Нажми /start');
+        $textService = new \App\Services\TextService();
+        $telegram->sendMessage($chatId, $textService->get('msg_quiz_prompt', 'Давай сначала пройдём короткий тест ✨ Нажми /start'));
         exit;
     }
     // Onboarding not done → prompt
     if (empty($user['onboarding_completed_at'])) {
-        $telegram->sendMessage($chatId, 'Осталось пару вопросов для настройки профиля 🙏');
+        $textService = new \App\Services\TextService();
+        $telegram->sendMessage($chatId, $textService->get('msg_onboarding_prompt', 'Осталось пару вопросов для настройки профиля 🙏'));
         exit;
     }
 
@@ -170,6 +173,8 @@ function handleCommand(int $chatId, int $userId, string $text, array $user, Tele
 {
     $command = strtolower(trim(explode(' ', $text)[0]));
 
+    $textService = new \App\Services\TextService();
+
     switch ($command) {
         case '/start':
             if (!empty($user['quiz_completed_at']) && !empty($user['onboarding_completed_at'])) {
@@ -192,19 +197,19 @@ function handleCommand(int $chatId, int $userId, string $text, array $user, Tele
         case '/nutrition':
             $userService = new UserService();
             $userService->setActiveMode($userId, 'nutrition');
-            $telegram->sendMessage($chatId, '🥗 Режим: *Консультант по питанию*\. Задавай вопросы\!');
+            $telegram->sendMessage($chatId, $textService->get('msg_mode_nutrition_header', '🥗 Режим: *Консультант по питанию*\. Задавай вопросы\!'));
             break;
 
         case '/cosmetics':
             $userService = new UserService();
             $userService->setActiveMode($userId, 'cosmetics');
-            $telegram->sendMessage($chatId, '✨ Режим: *Эксперт по косметике*\. Присылай фото составов или задавай вопросы\!');
+            $telegram->sendMessage($chatId, $textService->get('msg_mode_cosmetics_header', '✨ Режим: *Эксперт по косметике*\. Присылай фото составов или задавай вопросы\!'));
             break;
 
         case '/coach':
             $userService = new UserService();
             $userService->setActiveMode($userId, 'coach');
-            $telegram->sendMessage($chatId, '🧘 Режим: *Коуч*\. Расскажи, как ты себя чувствуешь\.');
+            $telegram->sendMessage($chatId, $textService->get('msg_mode_coach_header', '🧘 Режим: *Коуч*\. Расскажи, как ты себя чувствуешь\.'));
             break;
 
         case '/subscribe':
@@ -217,40 +222,40 @@ function handleCommand(int $chatId, int $userId, string $text, array $user, Tele
             $profile = $profileService->getProfile($userId);
             if ($profile) {
                 $persona = PersonaService::getPersonaEmoji($profile['persona'] ?? '') . ' ' . TelegramApi::escapeMarkdownV2(PersonaService::getPersonaLabel($profile['persona'] ?? ''));
-                $text  = "👤 *Твой профиль*\n\n";
-                $text .= "Архетип: {$persona}\n";
-                $text .= "Цель: " . TelegramApi::escapeMarkdownV2($profile['goal'] ?? '—') . "\n";
-                $text .= "Вес/Рост: " . TelegramApi::escapeMarkdownV2(($profile['weight_kg'] ?? '?') . " / " . ($profile['height_cm'] ?? '?')) . "\n";
-                $text .= "BMI: " . TelegramApi::escapeMarkdownV2($profile['bmi'] ?? '—') . "\n";
+                $text  = $textService->get('msg_profile_header', "👤 *Твой профиль*") . "\n\n";
+                $text .= $textService->get('msg_profile_archetype', "Архетип: ") . "{$persona}\n";
+                $text .= $textService->get('msg_profile_goal', "Цель: ") . TelegramApi::escapeMarkdownV2($profile['goal'] ?? $textService->get('msg_profile_cycle_empty', '—')) . "\n";
+                $text .= $textService->get('msg_profile_weight_height', "Вес/Рост: ") . TelegramApi::escapeMarkdownV2(($profile['weight_kg'] ?? '?') . " / " . ($profile['height_cm'] ?? '?')) . "\n";
+                $text .= $textService->get('msg_profile_bmi', "BMI: ") . TelegramApi::escapeMarkdownV2($profile['bmi'] ?? $textService->get('msg_profile_cycle_empty', '—')) . "\n";
 
                 // Cycle phase (dynamically calculated)
                 if (!empty($profile['cycle_phase'])) {
                     $cycleDay = $profile['cycle_day'] ?? null;
                     $cycleText = TelegramApi::escapeMarkdownV2($profile['cycle_phase']);
                     if ($cycleDay) {
-                        $cycleText .= " (день {$cycleDay})";
+                        $cycleText .= sprintf($textService->get('msg_profile_cycle_day', " (день %d)"), $cycleDay);
                     }
-                    $text .= "Цикл: {$cycleText}\n";
+                    $text .= $textService->get('msg_profile_cycle', "Цикл: ") . "{$cycleText}\n";
                 } else {
-                    $text .= "Цикл: —\n";
+                    $text .= $textService->get('msg_profile_cycle', "Цикл: ") . $textService->get('msg_profile_cycle_empty', "—") . "\n";
                 }
 
                 if (!empty($profile['last_period_date']) && $profile['last_period_date'] !== 'no_cycle') {
-                    $text .= "Дата последних месячных: " . TelegramApi::escapeMarkdownV2($profile['last_period_date']) . "\n";
+                    $text .= $textService->get('msg_profile_last_period', "Дата последних месячных: ") . TelegramApi::escapeMarkdownV2($profile['last_period_date']) . "\n";
                 }
 
                 $keyboard = TelegramApi::inlineKeyboard([
-                    [['text' => '✏️ Редактировать профиль', 'callback_data' => 'edit_profile']],
-                    [['text' => '⬅️ Назад в меню', 'callback_data' => 'back_to_menu']],
+                    [['text' => $textService->get('btn_edit_profile', '✏️ Редактировать профиль'), 'callback_data' => 'edit_profile']],
+                    [['text' => $textService->get('btn_back_to_menu', '⬅️ Назад в меню'), 'callback_data' => 'back_to_menu']],
                 ]);
                 $telegram->sendMessage($chatId, $text, $keyboard);
             } else {
-                $telegram->sendMessage($chatId, 'Профиль ещё не заполнен\. Пройди онбординг: /start');
+                $telegram->sendMessage($chatId, $textService->get('msg_profile_not_filled', 'Профиль ещё не заполнен\. Пройди онбординг: /start'));
             }
             break;
 
         default:
-            $telegram->sendMessage($chatId, 'Неизвестная команда\. Используй /menu для навигации\.');
+            $telegram->sendMessage($chatId, $textService->get('msg_unknown_command', 'Неизвестная команда\. Используй /menu для навигации\.'));
     }
 }
 
@@ -320,12 +325,11 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
 
     // Start quiz intro
     if ($data === 'start_quiz_intro') {
-        $text = "Прежде чем мы перейдем к цифрам и составам, давай поймем, в какой точке ты сейчас\.\n\n";
-        $text .= "Твой путь к сиянию зависит от того, какая энергия в тебе доминирует: нужно ли тебе восстановление, структура или масштаб\.\n\n";
-        $text .= "Ответь на 7 коротких вопросов\. В конце я не только назову твой Glow\-архетип, но и вышлю персональный 🎁 ПРИЗ, который поможет тебе сделать первый шаг уже сегодня\.";
+        $textService = new \App\Services\TextService();
+        $text = $textService->get('msg_quiz_intro_text', "Прежде чем мы перейдем к цифрам и составам, давай поймем, в какой точке ты сейчас\.\n\nТвой путь к сиянию зависит от того, какая энергия в тебе доминирует: нужно ли тебе восстановление, структура или масштаб\.\n\nОтветь на 7 коротких вопросов\. В конце я не только назову твой Glow\-архетип, но и вышлю персональный 🎁 ПРИЗ, который поможет тебе сделать первый шаг уже сегодня\.");
 
         $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => '🚀 ПОЕХАЛИ!', 'callback_data' => 'start_quiz']],
+            [['text' => $textService->get('btn_quiz_intro_start', '🚀 ПОЕХАЛИ!'), 'callback_data' => 'start_quiz']],
         ]);
 
         $telegram->sendMessage($chatId, $text, $keyboard);
@@ -355,9 +359,15 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
             $userService = new UserService();
             $userService->setActiveMode($userId, $mode);
 
-            $labels = ['nutrition' => '🥗 Питание', 'cosmetics' => '✨ Косметика', 'coach' => '🧘 Коучинг'];
+            $textService = new \App\Services\TextService();
+            $labels = [
+                'nutrition' => $textService->get('btn_mode_nutrition', '🥗 Питание'),
+                'cosmetics' => $textService->get('btn_mode_cosmetics', '✨ Косметика'),
+                'coach'     => $textService->get('btn_mode_coach', '🧘 Коучинг')
+            ];
             $labelEscaped = TelegramApi::escapeMarkdownV2($labels[$mode]);
-            $telegram->sendMessage($chatId, "Режим переключён на: *{$labelEscaped}*\n\n Чем я могу тебе помочь? Спроси что угодно и я отвечу\!");
+            $msg = sprintf($textService->get('msg_mode_switched', "Режим переключён на: *%s*\n\n Чем я могу тебе помочь? Спроси что угодно и я отвечу\!"), $labelEscaped);
+            $telegram->sendMessage($chatId, $msg);
         }
         return;
     }
@@ -384,17 +394,18 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
 
 function sendWelcome(int $chatId, TelegramApi $telegram): void
 {
-    $root = Config::getProjectRoot();
-    $messagesFile = file_get_contents($root . '/bot/Texts/messages.md');
+    $textService = new \App\Services\TextService();
+    $text = $textService->get('msg_start_welcome');
 
-    // Extract START_WELCOME block
-    $text = "*Привет 🤍*\nЯ — твой *Prime Beauty AI\-ассистент*\.\n\n";
-    $text .= "Я помогу тебе собрать систему: питание, цикл, антистресс, ритуалы, уход — без хаоса и насилия над собой\.\n\n";
-    $text .= "Важно: я не врач и не заменяю медицинские рекомендации\. Я — инструмент осознанности и структуры\.\n\n";
-    $text .= "Готова настроить свой Prime\-профиль?";
+    if (!$text) {
+        $text = "*Привет 🤍*\nЯ — твой *Prime Beauty AI\-ассистент*\.\n\n";
+        $text .= "Я помогу тебе собрать систему: питание, цикл, антистресс, ритуалы, уход — без хаоса и насилия над собой\.\n\n";
+        $text .= "Важно: я не врач и не заменяю медицинские рекомендации\. Я — инструмент осознанности и структуры\.\n\n";
+        $text .= "Готова настроить свой Prime\-профиль?";
+    }
 
     $keyboard = TelegramApi::inlineKeyboard([
-        [['text' => '✨ НАЧАТЬ НАСТРОЙКУ', 'callback_data' => 'start_quiz_intro']],
+        [['text' => $textService->get('btn_start_onboarding', '✨ НАЧАТЬ НАСТРОЙКУ'), 'callback_data' => 'start_quiz_intro']],
     ]);
 
     $telegram->sendMessage($chatId, $text, $keyboard);
@@ -402,14 +413,15 @@ function sendWelcome(int $chatId, TelegramApi $telegram): void
 
 function sendMainMenu(int $chatId, array $user, TelegramApi $telegram): void
 {
+    $textService = new \App\Services\TextService();
     $name = TelegramApi::escapeMarkdownV2($user['first_name'] ?? 'Подруга');
-    $text = "Привет, {$name}\! ✨\n\nВыбери, с чего начнём сегодня:";
+    $text = sprintf($textService->get('msg_main_menu_text', "Привет, %s\! ✨\n\nВыбери, с чего начнём сегодня:"), $name);
 
     $keyboard = TelegramApi::inlineKeyboard([
-        [['text' => '🥗 Питание', 'callback_data' => 'mode_nutrition']],
-        [['text' => '✨ Косметика', 'callback_data' => 'mode_cosmetics']],
-        [['text' => '🧘 Коучинг', 'callback_data' => 'mode_coach']],
-        [['text' => '👤 Мой профиль', 'callback_data' => 'show_profile']],
+        [['text' => $textService->get('btn_mode_nutrition', '🥗 Питание'), 'callback_data' => 'mode_nutrition']],
+        [['text' => $textService->get('btn_mode_cosmetics', '✨ Косметика'), 'callback_data' => 'mode_cosmetics']],
+        [['text' => $textService->get('btn_mode_coach', '🧘 Коучинг'), 'callback_data' => 'mode_coach']],
+        [['text' => $textService->get('btn_mode_profile', '👤 Мой профиль'), 'callback_data' => 'show_profile']],
     ]);
 
     $telegram->sendMessage($chatId, $text, $keyboard);

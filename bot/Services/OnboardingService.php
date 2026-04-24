@@ -62,7 +62,7 @@ class OnboardingService
      */
     public function start(int $chatId, int $userId): void
     {
-        $text = "Чтобы я могла давать тебе точные рекомендации, мне нужны твои базовые настройки\.\n\nЭто займет 30 секунд, но сэкономит тебе часы жизни ✨";
+        $text = $this->textService->get('msg_onboarding_intro', "Чтобы я могла давать тебе точные рекомендации, мне нужны твои базовые настройки\.\n\nЭто займет 30 секунд, но сэкономит тебе часы жизни ✨");
         $this->telegram->sendMessage($chatId, $text);
 
         $this->sendQuestion($chatId, $userId, 0);
@@ -86,7 +86,7 @@ class OnboardingService
         $userService->resetOnboarding($userId);
 
         // Send intro and start from question 0
-        $text = "✏️ *Редактирование профиля*\n\nДавай обновим твои данные\. Ответь на несколько вопросов заново\.";
+        $text = $this->textService->get('msg_profile_edit_intro', "✏️ *Редактирование профиля*\n\nДавай обновим твои данные\. Ответь на несколько вопросов заново\.");
         $this->telegram->sendMessage($chatId, $text);
 
         $this->sendQuestion($chatId, $userId, 0);
@@ -166,7 +166,7 @@ class OnboardingService
             $dateValue = $this->parseLastPeriodDate($text);
 
             if ($dateValue === null) {
-                $this->telegram->sendMessage($chatId, '❌ Не удалось распознать дату\. Напиши в формате ДД\.ММ \(например: 15\.03\) или «нет», если цикл отсутствует\.');
+                $this->telegram->sendMessage($chatId, $this->textService->get('msg_onboarding_date_error', '❌ Не удалось распознать дату\. Напиши в формате ДД\.ММ \(например: 15\.03\) или «нет», если цикл отсутствует\.'));
                 return;
             }
 
@@ -231,8 +231,9 @@ class OnboardingService
             return;
         }
 
-        $q = self::QUESTIONS[$index];
-        $text = "📋 *Настройка профиля* \n\n {$q['text']}";
+        $q = $this->getLocalizedQuestion($index);
+        $header = $this->textService->get('msg_onboarding_header', '📋 *Настройка профиля*');
+        $text = "{$header} \n\n {$q['text']}";
 
         $userService = new UserService();
 
@@ -272,16 +273,30 @@ class OnboardingService
         $userService = new UserService();
         $user = $userService->findById($userId);
         $name = TelegramApi::escapeMarkdownV2($user['first_name'] ?? 'Подруга');
-        $text = "Привет, {$name}\! ✨\n\nВыбери, с чего начнём сегодня:";
+        $text = sprintf($this->textService->get('msg_main_menu_text', "Привет, %s\! ✨\n\nВыбери, с чего начнём сегодня:"), $name);
 
         $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => '🥗 Питание', 'callback_data' => 'mode_nutrition']],
-            [['text' => '✨ Косметика', 'callback_data' => 'mode_cosmetics']],
-            [['text' => '🧘 Коучинг', 'callback_data' => 'mode_coach']],
-            [['text' => '👤 Мой профиль', 'callback_data' => 'show_profile']],
+            [['text' => $this->textService->get('btn_mode_nutrition', '🥗 Питание'), 'callback_data' => 'mode_nutrition']],
+            [['text' => $this->textService->get('btn_mode_cosmetics', '✨ Косметика'), 'callback_data' => 'mode_cosmetics']],
+            [['text' => $this->textService->get('btn_mode_coach', '🧘 Коучинг'), 'callback_data' => 'mode_coach']],
+            [['text' => $this->textService->get('btn_mode_profile', '👤 Мой профиль'), 'callback_data' => 'show_profile']],
         ]);
 
         $this->telegram->sendMessage($chatId, $text, $keyboard);
+    }
+
+    private function getLocalizedQuestion(int $index): array
+    {
+        $q = self::QUESTIONS[$index];
+        $q['text'] = $this->textService->get("onboard_q_{$q['id']}_text", $q['text']);
+        
+        if (isset($q['options'])) {
+            foreach ($q['options'] as $key => $label) {
+                $q['options'][$key] = $this->textService->get("onboard_q_{$q['id']}_opt_{$key}", $label);
+            }
+        }
+        
+        return $q;
     }
 
     private function findQuestion(string $id): ?array
