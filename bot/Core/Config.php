@@ -52,7 +52,25 @@ class Config
 
     public static function getProdamusPrice(): int
     {
-        return (int) self::get('PRODAMUS_PRICE_RUB', 2100);
+        return self::getProdamusSubscriptionPrice();
+    }
+
+    public static function getProdamusSubscriptionPrice(): int
+    {
+        $dbPrice = Settings::get('price_subscription');
+        if ($dbPrice !== null) {
+            return (int) $dbPrice;
+        }
+        return (int) self::get('PRODAMUS_SUBSCRIPTION_PRICE_RUB', 1990);
+    }
+
+    public static function getProdamusCoursePrice(): int
+    {
+        $dbPrice = Settings::get('price_course');
+        if ($dbPrice !== null) {
+            return (int) $dbPrice;
+        }
+        return (int) self::get('PRODAMUS_COURSE_PRICE_RUB', 10000);
     }
 
     public static function getOpenAiKey(): string

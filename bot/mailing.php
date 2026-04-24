@@ -6,6 +6,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Database;
 use App\Core\TelegramApi;
+use App\Core\Config;
 use App\Services\TextService;
 use App\Services\SubscriptionService;
 
@@ -68,8 +69,10 @@ foreach ($users as $user) {
         
         // Final Trial notice
         sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_trial_end');
+        $coursePrice = Config::getProdamusCoursePrice();
+        $subPrice = Config::getProdamusSubscriptionPrice();
         sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_trial_end_paths', null, [
-            [['text' => $textService->get('btn_trial_nastya', 'С Настей (10 000р)'), 'callback_data' => 'trial_nastya'], ['text' => $textService->get('btn_trial_bot', 'С ботом (1990р)'), 'callback_data' => 'trial_bot']],
+            [['text' => sprintf($textService->get('btn_trial_nastya', 'С Настей (%dр)'), $coursePrice), 'callback_data' => 'trial_nastya'], ['text' => sprintf($textService->get('btn_trial_bot', 'С ботом (%dр)'), $subPrice), 'callback_data' => 'trial_bot']],
             [['text' => $textService->get('btn_trial_pdf', 'Гайд'), 'callback_data' => 'trial_pdf'], ['text' => $textService->get('btn_trial_demo', 'Демо-промпт'), 'callback_data' => 'trial_demo']]
         ]);
         

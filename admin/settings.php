@@ -16,10 +16,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $infoEnabled = isset($_POST['log_info_enabled']) ? '1' : '0';
         $debugEnabled = isset($_POST['log_debug_enabled']) ? '1' : '0';
-
+        $priceSub = $_POST['price_subscription'] ?? '1990';
+        $priceCourse = $_POST['price_course'] ?? '10000';
+ 
         Settings::set('log_info_enabled', $infoEnabled);
         Settings::set('log_debug_enabled', $debugEnabled);
-
+        Settings::set('price_subscription', $priceSub);
+        Settings::set('price_course', $priceCourse);
+ 
         $success = 'Настройки успешно сохранены.';
     } catch (\Throwable $e) {
         $error = 'Ошибка при сохранении: ' . $e->getMessage();
@@ -137,6 +141,32 @@ adminHeader('Настройки', 'settings');
         display: flex;
         justify-content: flex-end;
     }
+ 
+    .input-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--bg-card-alt);
+        border-radius: 8px;
+        margin-bottom: 8px;
+        border: 1px solid transparent;
+    }
+    .settings-input {
+        background: var(--bg-body);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        padding: 8px 12px;
+        border-radius: 6px;
+        width: 120px;
+        font-family: inherit;
+        font-size: 14px;
+        text-align: right;
+    }
+    .settings-input:focus {
+        border-color: var(--accent-primary);
+        outline: none;
+    }
 </style>
 
 <div class="settings-container">
@@ -172,6 +202,24 @@ adminHeader('Настройки', 'settings');
                         <input type="checkbox" name="log_debug_enabled" <?= $debugEnabled ? 'checked' : '' ?>>
                         <span class="slider"></span>
                     </label>
+                </div>
+            </div>
+ 
+            <div class="settings-group">
+                <h3>💰 Стоимость (руб.)</h3>
+                
+                <div class="input-row">
+                    <div class="toggle-info">
+                        <span class="toggle-label">Подписка на бота</span>
+                    </div>
+                    <input type="number" name="price_subscription" value="<?= htmlspecialchars(Settings::get('price_subscription', '1990')) ?>" class="settings-input">
+                </div>
+ 
+                <div class="input-row">
+                    <div class="toggle-info">
+                        <span class="toggle-label">Курс с Настей</span>
+                    </div>
+                    <input type="number" name="price_course" value="<?= htmlspecialchars(Settings::get('price_course', '10000')) ?>" class="settings-input">
                 </div>
             </div>
 

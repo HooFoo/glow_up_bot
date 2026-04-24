@@ -11,7 +11,7 @@ class ProdamusService
     /**
      * Generate payment link for Prodamus.
      */
-    public function generatePaymentLink(int $userId, string $orderId, float $sum): string
+    public function generatePaymentLink(int $userId, string $orderId, float $sum, string $productName = 'Подписка Prime Glow'): string
     {
         $domain = Config::getProdamusDomain();
         if (empty($domain)) {
@@ -23,7 +23,7 @@ class ProdamusService
             'sum' => $sum,
             'order_id' => $orderId,
             'customer_extra' => (string) $userId,
-            'products[0][name]' => 'Подписка Prime Glow',
+            'products[0][name]' => $productName,
             'products[0][price]' => $sum,
             'products[0][quantity]' => 1,
             // You can add more parameters here if needed
