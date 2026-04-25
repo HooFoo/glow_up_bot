@@ -447,7 +447,7 @@ function sendLegalTerms(int $chatId, TelegramApi $telegram): void
         [['text' => $textService->get('btn_accept_terms', 'Принимаю'), 'callback_data' => 'accept_terms']],
     ]);
 
-    $telegram->sendMessage($chatId, $text, $keyboard, 'HTML');
+    $telegram->sendMessage($chatId, $text, $keyboard, 'MarkdownV2');
 }
 
 function sendWelcome(int $chatId, TelegramApi $telegram): void
