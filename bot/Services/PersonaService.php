@@ -77,11 +77,12 @@ class PersonaService
         $info = self::PERSONAS[$persona];
         $textKey = 'QUIZ_RESULT_' . $persona;
         
-        // Fetch text from DB via TextService
-        $text = $this->textService->get($textKey, '', true);
+        // Fetch text from DB via TextService (escaped for MarkdownV2)
+        $text = $this->textService->get($textKey, '');
 
         if (!$text) {
-            $text = sprintf($this->textService->get('msg_persona_result_prefix', 'Твой архетип — %s %s!', true), $info['emoji'], $info['label']);
+            $prefix = $this->textService->get('msg_persona_result_prefix', 'Твой архетип — %s %s!');
+            $text = sprintf($prefix, $info['emoji'], TelegramApi::escapeMarkdownV2($info['label']));
         }
 
         // Send image + text as caption
@@ -116,7 +117,7 @@ class PersonaService
             $keyboard = TelegramApi::inlineKeyboard([
                 [['text' => $this->textService->get('btn_activate_prime', '✨ Включить мой Прайм режим', true), 'callback_data' => 'start_funnel']]
             ]);
-            $this->telegram->sendDocument($chatId, $filePath, $this->textService->get('msg_gift_caption', '🎁 Твой персональный подарок!', true), $keyboard);
+            $this->telegram->sendDocument($chatId, $filePath, $this->textService->get('msg_gift_caption', '🎁 Твой персональный подарок!'), $keyboard);
         }
     }
 

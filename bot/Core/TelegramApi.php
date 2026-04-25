@@ -86,7 +86,18 @@ class TelegramApi
             'multipart' => $multipart,
         ]);
 
-        return json_decode($response->getBody()->getContents(), true);
+        $result = json_decode($response->getBody()->getContents(), true);
+
+        if ($result['ok'] === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
+            // Retry without parse_mode
+            $multipart = array_filter($multipart, fn($item) => $item['name'] !== 'parse_mode');
+            $response = $this->http->post("{$this->baseUrl}/sendDocument", [
+                'multipart' => $multipart,
+            ]);
+            return json_decode($response->getBody()->getContents(), true);
+        }
+
+        return $result;
     }
 
     public function sendPhoto(int|string $chatId, string $filePath, ?string $caption = null, ?array $replyMarkup = null): array
@@ -107,7 +118,18 @@ class TelegramApi
             'multipart' => $multipart,
         ]);
 
-        return json_decode($response->getBody()->getContents(), true);
+        $result = json_decode($response->getBody()->getContents(), true);
+
+        if ($result['ok'] === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
+            // Retry without parse_mode
+            $multipart = array_filter($multipart, fn($item) => $item['name'] !== 'parse_mode');
+            $response = $this->http->post("{$this->baseUrl}/sendPhoto", [
+                'multipart' => $multipart,
+            ]);
+            return json_decode($response->getBody()->getContents(), true);
+        }
+
+        return $result;
     }
 
     // ─── Chat Actions ────────────────────────────────────────────

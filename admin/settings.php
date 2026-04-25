@@ -23,27 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Settings::set('log_debug_enabled', $debugEnabled);
         Settings::set('price_subscription', $priceSub);
         Settings::set('price_course', $priceCourse);
-
-        // Handle PDF uploads
-        $personas = ['shadow_queen', 'iron_controller', 'sleeping_muse', 'magnetic_prime'];
-        foreach ($personas as $p) {
-            if (isset($_FILES['gift_pdf_' . $p]) && $_FILES['gift_pdf_' . $p]['error'] === UPLOAD_ERR_OK) {
-                $file = $_FILES['gift_pdf_' . $p];
-                $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-                if (strtolower($ext) !== 'pdf') {
-                    throw new Exception('Файл для ' . $p . ' должен быть PDF');
-                }
-                
-                $newName = $p . '_' . time() . '.pdf';
-                $targetPath = \App\Core\Config::getProjectRoot() . '/bot/assets/gifts/' . $newName;
-                
-                if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-                    Settings::set('gift_pdf_' . $p, $newName);
-                } else {
-                    throw new Exception('Не удалось загрузить файл для ' . $p);
-                }
-            }
-        }
  
         $success = 'Настройки успешно сохранены.';
     } catch (\Throwable $e) {
@@ -213,6 +192,10 @@ adminHeader('Настройки', 'settings');
         border-color: var(--accent-primary);
         color: var(--accent-primary);
     }
+    .btn-upload.uploading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
     .btn-view {
         text-decoration: none;
         background: var(--bg-body);
@@ -239,7 +222,7 @@ adminHeader('Настройки', 'settings');
         <div class="alert alert-error">❌ <?= $error ?></div>
     <?php endif; ?>
 
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST">
         <div class="settings-card">
             <div class="settings-group">
                 <h3>📋 Логирование</h3>
@@ -289,6 +272,7 @@ adminHeader('Настройки', 'settings');
                 <h3>🎁 Подарки (PDF)</h3>
                 <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">
                     Эти PDF-файлы отправляются пользователям после прохождения квиза в зависимости от их архетипа.
+                    Файлы загружаются мгновенно при выборе.
                 </p>
 
                 <?php 
@@ -301,16 +285,16 @@ adminHeader('Настройки', 'settings');
                 foreach ($personaMeta as $p => $meta): 
                     $currentFile = Settings::get('gift_pdf_' . $p);
                 ?>
-                <div class="input-row file-row">
+                <div class="input-row file-row" id="row_<?= $p ?>">
                     <div class="toggle-info">
                         <span class="toggle-label"><?= $meta['emoji'] ?> <?= $meta['label'] ?></span>
-                        <span class="toggle-desc">Файл: <?= htmlspecialchars($currentFile ?: 'по умолчанию') ?></span>
+                        <span class="toggle-desc current-filename">Файл: <?= htmlspecialchars($currentFile ?: 'по умолчанию') ?></span>
                     </div>
                     <div class="file-actions">
                         <a href="view_gift.php?persona=<?= $p ?>" target="_blank" class="btn-view" title="Просмотреть">👁️</a>
-                        <label class="btn-upload">
+                        <label class="btn-upload" id="label_<?= $p ?>">
                             📁 Изменить
-                            <input type="file" name="gift_pdf_<?= $p ?>" accept="application/pdf" style="display: none;" onchange="this.parentElement.style.borderColor='var(--accent-primary)'; this.parentElement.innerText='📄 Выбран';">
+                            <input type="file" accept="application/pdf" style="display: none;" onchange="uploadFile('<?= $p ?>', this)">
                         </label>
                     </div>
                 </div>
@@ -318,10 +302,60 @@ adminHeader('Настройки', 'settings');
             </div>
 
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                <button type="submit" class="btn btn-primary">Сохранить общие настройки</button>
             </div>
         </div>
     </form>
+
+    <script>
+    async function uploadFile(persona, input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const label = document.getElementById('label_' + persona);
+        const row = document.getElementById('row_' + persona);
+        const desc = row.querySelector('.current-filename');
+        const originalText = label.innerText;
+
+        // Show loading state
+        label.classList.add('uploading');
+        label.innerText = '⌛ Загрузка...';
+
+        const formData = new FormData();
+        formData.append('persona', persona);
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('ajax/upload_gift.php', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            if (result.ok) {
+                label.innerText = '✅ Готово';
+                desc.innerText = 'Файл: ' + result.filename;
+                label.style.borderColor = 'var(--success)';
+                setTimeout(() => {
+                    label.innerText = '📁 Изменить';
+                    label.classList.remove('uploading');
+                    label.style.borderColor = '';
+                }, 2000);
+            } else {
+                alert('Ошибка: ' + result.error);
+                label.innerText = '❌ Ошибка';
+                setTimeout(() => {
+                    label.innerText = '📁 Изменить';
+                    label.classList.remove('uploading');
+                }, 2000);
+            }
+        } catch (e) {
+            alert('Сетевая ошибка при загрузке');
+            label.innerText = '📁 Изменить';
+            label.classList.remove('uploading');
+        }
+    }
+    </script>
 
     <div class="settings-card" style="opacity: 0.7;">
         <div class="settings-group" style="margin-bottom: 0;">
