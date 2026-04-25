@@ -47,7 +47,7 @@ class ChatService
 
         if (empty(trim($reply))) {
             \App\Core\Logger::getInstance()->error("Empty response from OpenAI (likely reasoning tokens limit reached)");
-            $this->telegram->sendMessage($chatId, $this->textService->get('msg_chat_error_empty', "Извини, я слишком глубоко задумалась и не успела ответить 🥺 Попробуй еще раз\!"));
+            $this->telegram->sendMessage($chatId, $this->textService->get('msg_chat_error_empty', "Извини, я слишком глубоко задумалась и не успела ответить 🥺 Попробуй еще раз!", true));
             return;
         }
 
@@ -82,14 +82,14 @@ class ChatService
         unlink($tmpFile);
 
         // Build vision prompt
-        $prompt = $caption ?: $this->textService->get('msg_chat_vision_prompt_default', 'Что ты видишь на этом фото? Проанализируй с учётом моего профиля\.');
+        $prompt = $caption ?: $this->textService->get('msg_chat_vision_prompt_default', 'Что ты видишь на этом фото? Проанализируй с учётом моего профиля.', true);
         $systemPrompt = $this->buildSystemPrompt($userId, $mode);
 
         $reply = $this->openai->vision($imageData, 'image/jpeg', $prompt, $systemPrompt);
 
         if (empty(trim($reply))) {
             \App\Core\Logger::getInstance()->error("Empty vision response from OpenAI");
-            $this->telegram->sendMessage($chatId, $this->textService->get('msg_chat_vision_error', "Не удалось проанализировать фото 😔 Попробуй ещё раз\!"));
+            $this->telegram->sendMessage($chatId, $this->textService->get('msg_chat_vision_error', "Не удалось проанализировать фото 😔 Попробуй ещё раз!", true));
             return;
         }
 
@@ -120,7 +120,7 @@ class ChatService
         unlink($tmpFile);
 
         if (empty($text)) {
-            $this->telegram->sendMessage($chatId, $this->textService->get('msg_chat_voice_error', 'Не удалось распознать голосовое сообщение 😔 Попробуй ещё раз или напиши текстом\.'));
+            $this->telegram->sendMessage($chatId, $this->textService->get('msg_chat_voice_error', 'Не удалось распознать голосовое сообщение 😔 Попробуй ещё раз или напиши текстом.', true));
             return;
         }
 
@@ -178,7 +178,7 @@ class ChatService
         // Compose
         $systemPrompt = $base . "\n\n---\n\n" . $modePrompt;
         $systemPrompt = str_replace('{{USER_PROFILE_JSON}}', $profileJson, $systemPrompt);
-        $systemPrompt = str_replace('{{CONVERSATION_SUMMARY}}', $summary ?: $this->textService->get('msg_chat_no_summary', '(Нет предыдущего резюме)'), $systemPrompt);
+        $systemPrompt = str_replace('{{CONVERSATION_SUMMARY}}', $summary ?: $this->textService->get('msg_chat_no_summary', '(Нет предыдущего резюме)', true), $systemPrompt);
 
         // Add instruction about markdown
         $systemPrompt .= "\n\nВАЖНО: Для выделения текста (жирный) используй только одну звездочку: *жирный*, не используй двойные **.";
@@ -191,12 +191,6 @@ class ChatService
      */
     private function ensureMarkdownV1(string $text): string
     {
-        // 1. Convert **bold** to *bold* (V1 uses single asterisk for bold)
-        $text = str_replace('**', '*', $text);
-        
-        // 2. Escape reserved symbols for V1 (*, _, [, `) if they are not part of entities?
-        // Actually V1 is very lenient. The biggest issue is unclosed * or _.
-        
         return $text;
     }
 

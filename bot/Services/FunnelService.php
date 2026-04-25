@@ -32,17 +32,17 @@ class FunnelService
 
     private function sendStep1(int $chatId): void
     {
-        $text = $this->textService->get('msg_step_1_interest');
+        $text = $this->textService->get('msg_step_1_interest', '', true);
         if (empty($text)) {
             $this->advanceToStep2($chatId, 0); // fallback if skipped
             return;
         }
 
         $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => $this->textService->get('btn_funnel_energy', 'Энергия / усталость'), 'callback_data' => 'funnel_ans_step1_energy']],
-            [['text' => $this->textService->get('btn_funnel_skin', 'Кожа / внешний вид'), 'callback_data' => 'funnel_ans_step1_skin']],
-            [['text' => $this->textService->get('btn_funnel_food', 'Питание / тело'), 'callback_data' => 'funnel_ans_step1_food']],
-            [['text' => $this->textService->get('btn_funnel_stress', 'Состояние (стресс, ПМС)'), 'callback_data' => 'funnel_ans_step1_stress']],
+            [['text' => $this->textService->get('btn_funnel_energy', 'Энергия / усталость', true), 'callback_data' => 'funnel_ans_step1_energy']],
+            [['text' => $this->textService->get('btn_funnel_skin', 'Кожа / внешний вид', true), 'callback_data' => 'funnel_ans_step1_skin']],
+            [['text' => $this->textService->get('btn_funnel_food', 'Питание / тело', true), 'callback_data' => 'funnel_ans_step1_food']],
+            [['text' => $this->textService->get('btn_funnel_stress', 'Состояние (стресс, ПМС)', true), 'callback_data' => 'funnel_ans_step1_stress']],
         ]);
 
         $this->telegram->sendMessage($chatId, $text, $keyboard);
@@ -101,9 +101,9 @@ class FunnelService
         $prodamus = new ProdamusService();
         $payUrl = $prodamus->generatePaymentLink($userId, $orderId, (float)$price, 'Курс с Настей');
         
-        $text = $this->textService->get('msg_course_payment_prompt', "Для оплаты курса с Настей перейдите по ссылке:");
+        $text = $this->textService->get('msg_course_payment_prompt', "Для оплаты курса с Настей перейдите по ссылке:", true);
         $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => sprintf($this->textService->get('btn_pay_course', 'Оплатить курс — %d Р'), $price), 'url' => $payUrl]]
+            [['text' => sprintf($this->textService->get('btn_pay_course', 'Оплатить курс — %d Р', true), $price), 'url' => $payUrl]]
         ]);
         
         $this->telegram->sendMessage($chatId, $text, $keyboard);
@@ -115,7 +115,7 @@ class FunnelService
     private function advanceToStep2(int $chatId, int $userId): void
     {
         $this->userService->updateState($userId, 'funnel_step_2');
-        $text = $this->textService->get('msg_step_2_context');
+        $text = $this->textService->get('msg_step_2_context', '', true);
         if (!empty($text)) {
             $this->telegram->sendMessage($chatId, $text);
         }
@@ -127,7 +127,7 @@ class FunnelService
     private function advanceToStep3(int $chatId, int $userId): void
     {
         $this->userService->updateState($userId, 'funnel_step_3');
-        $text = $this->textService->get('msg_step_3_diagnostic');
+        $text = $this->textService->get('msg_step_3_diagnostic', '', true);
         if (!empty($text)) {
             $this->telegram->sendMessage($chatId, $text);
         } else {
@@ -138,7 +138,7 @@ class FunnelService
     private function advanceToStep4(int $chatId, int $userId): void
     {
         $this->userService->updateState($userId, 'funnel_step_4');
-        $text = $this->textService->get('msg_step_4_value');
+        $text = $this->textService->get('msg_step_4_value', '', true);
         if (!empty($text)) {
             $this->telegram->sendMessage($chatId, $text);
         } else {
@@ -149,15 +149,15 @@ class FunnelService
     private function advanceToStep5(int $chatId, int $userId): void
     {
         $this->userService->updateState($userId, 'funnel_step_5_offer');
-        $text = $this->textService->get('msg_step_5_soft_offer');
+        $text = $this->textService->get('msg_step_5_soft_offer', '', true);
         if (!empty($text)) {
             $coursePrice = Config::getProdamusCoursePrice();
             $subPrice = Config::getProdamusSubscriptionPrice();
             
             $keyboard = TelegramApi::inlineKeyboard([
                 [
-                    ['text' => sprintf($this->textService->get('btn_funnel_nastya', 'С Настей (%d Р)'), $coursePrice), 'callback_data' => 'funnel_path_nastya'], 
-                    ['text' => sprintf($this->textService->get('btn_funnel_bot', 'С ботом (%d Р)'), $subPrice), 'callback_data' => 'funnel_path_self']
+                    ['text' => sprintf($this->textService->get('btn_funnel_nastya', 'С Настей (%d Р)', true), $coursePrice), 'callback_data' => 'funnel_path_nastya'], 
+                    ['text' => sprintf($this->textService->get('btn_funnel_bot', 'С ботом (%d Р)', true), $subPrice), 'callback_data' => 'funnel_path_self']
                 ]
             ]);
             $this->telegram->sendMessage($chatId, $text, $keyboard);
@@ -169,7 +169,7 @@ class FunnelService
     private function sendStepSelfPath(int $chatId, int $userId): void
     {
         $this->userService->updateState($userId, 'funnel_step_self');
-        $text = $this->textService->get('msg_step_self_path');
+        $text = $this->textService->get('msg_step_self_path', '', true);
         if (!empty($text)) {
             $this->telegram->sendMessage($chatId, $text);
         } else {
@@ -180,10 +180,10 @@ class FunnelService
     private function sendStepNastyaOffer(int $chatId, int $userId): void
     {
         $this->userService->updateState($userId, 'funnel_step_nastya_offer');
-        $text = $this->textService->get('msg_step_6_offer_details');
+        $text = $this->textService->get('msg_step_6_offer_details', '', true);
         if (!empty($text)) {
             $keyboard = TelegramApi::inlineKeyboard([
-                [['text' => $this->textService->get('btn_funnel_go', 'Иду!'), 'callback_data' => 'funnel_nastya_go']]
+                [['text' => $this->textService->get('btn_funnel_go', 'Иду!', true), 'callback_data' => 'funnel_nastya_go']]
             ]);
             $this->telegram->sendMessage($chatId, $text, $keyboard);
         } else {
@@ -194,10 +194,10 @@ class FunnelService
     private function sendStepNastyaClose(int $chatId, int $userId): void
     {
         $this->userService->updateState($userId, 'funnel_step_nastya_close');
-        $text = $this->textService->get('msg_step_7_close');
+        $text = $this->textService->get('msg_step_7_close', '', true);
         if (!empty($text)) {
             $keyboard = TelegramApi::inlineKeyboard([
-                [['text' => $this->textService->get('btn_funnel_pay', 'Оплата'), 'callback_data' => 'funnel_nastya_pay']]
+                [['text' => $this->textService->get('btn_funnel_pay', 'Оплата', true), 'callback_data' => 'funnel_nastya_pay']]
             ]);
             $this->telegram->sendMessage($chatId, $text, $keyboard);
         } else {

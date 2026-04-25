@@ -198,7 +198,7 @@ class QuizService
         @set_time_limit(180); // Ensure the script has enough time for the simulation
 
         // 1. Send "Processing" message
-        $processingText = $this->textService->get('msg_quiz_processing', "⏳ *Обрабатываю твои ответы\.\.\.*\n\nМой ИИ\-алгоритм анализирует твое текущее состояние и формирует персональный Glow\-архетип\.\n\nЭто займет около 30 секунд\.\.\.");
+        $processingText = $this->textService->get('msg_quiz_processing', "⏳ *Обрабатываю твои ответы...*\n\nМой ИИ-алгоритм анализирует твое текущее состояние и формирует персональный Glow-архетип.\n\nЭто займет около 30 секунд...", true);
         $msg = $this->telegram->sendMessage($chatId, $processingText);
         $processingMessageId = $msg['result']['message_id'] ?? null;
 

@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Core\Database;
 use App\Core\TelegramApi;
 use App\Core\Config;
+use App\Core\Settings;
 
 class PersonaService
 {
@@ -77,11 +78,10 @@ class PersonaService
         $textKey = 'QUIZ_RESULT_' . $persona;
         
         // Fetch text from DB via TextService
-        $text = $this->textService->get($textKey);
+        $text = $this->textService->get($textKey, '', true);
 
         if (!$text) {
-            $labelEscaped = TelegramApi::escapeMarkdownV2($info['label']);
-            $text = sprintf($this->textService->get('msg_persona_result_prefix', 'Твой архетип — %s %s\!'), $info['emoji'], $labelEscaped);
+            $text = sprintf($this->textService->get('msg_persona_result_prefix', 'Твой архетип — %s %s!', true), $info['emoji'], $info['label']);
         }
 
         // Send image + text as caption
@@ -96,15 +96,17 @@ class PersonaService
 
     public function sendGift(int $chatId, string $persona): void
     {
-        // Gift file mapping
-        $gifts = [
+        // Default mapping
+        $defaults = [
             'shadow_queen'    => 'shadow_queen_sos.pdf',
             'iron_controller' => 'iron_controller_delegation.pdf',
             'sleeping_muse'   => 'sleeping_muse_tracker.pdf',
             'magnetic_prime'  => 'magnetic_prime_longevity.pdf',
         ];
 
-        $filename = $gifts[$persona] ?? null;
+        // Try to get from settings first
+        $filename = Settings::get('gift_pdf_' . $persona, $defaults[$persona] ?? null);
+        
         if (!$filename) {
             return;
         }
@@ -112,18 +114,18 @@ class PersonaService
         $filePath = Config::getProjectRoot() . '/bot/assets/gifts/' . $filename;
         if (file_exists($filePath)) {
             $keyboard = TelegramApi::inlineKeyboard([
-                [['text' => $this->textService->get('btn_activate_prime', '✨ Включить мой Прайм режим'), 'callback_data' => 'start_funnel']]
+                [['text' => $this->textService->get('btn_activate_prime', '✨ Включить мой Прайм режим', true), 'callback_data' => 'start_funnel']]
             ]);
-            $this->telegram->sendDocument($chatId, $filePath, $this->textService->get('msg_gift_caption', '🎁 Твой персональный подарок\!'), $keyboard);
+            $this->telegram->sendDocument($chatId, $filePath, $this->textService->get('msg_gift_caption', '🎁 Твой персональный подарок!', true), $keyboard);
         }
     }
 
     private function sendPaywallCta(int $chatId): void
     {
-        $text = $this->textService->get('PAYWALL_CTA', 'Начни свой Glow Up прямо сейчас 👇');
+        $text = $this->textService->get('PAYWALL_CTA', 'Начни свой Glow Up прямо сейчас 👇', true);
 
         $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => $this->textService->get('btn_get_access', '✨ ПОЛУЧИТЬ ДОСТУП'), 'callback_data' => 'get_access']],
+            [['text' => $this->textService->get('btn_get_access', '✨ ПОЛУЧИТЬ ДОСТУП', true), 'callback_data' => 'get_access']],
         ]);
 
         $this->telegram->sendMessage($chatId, $text, $keyboard);

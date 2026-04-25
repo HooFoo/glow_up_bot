@@ -34,6 +34,12 @@ class TelegramApi
             $text = str_replace('**', '*', $text);
         }
 
+        // If using legacy Markdown, remove V2-style escaping for characters that don't need it in V1
+        // (like dots, hyphens, exclamation marks, etc.) to support texts migrated from V2.
+        if ($parseMode === 'Markdown') {
+            $text = preg_replace('/\\\\([.!+\-=|{}()>#~])/', '$1', $text);
+        }
+
         $params = [
             'chat_id'    => $chatId,
             'text'       => $text,

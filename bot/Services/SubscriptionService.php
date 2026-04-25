@@ -73,10 +73,10 @@ class SubscriptionService
         $prodamus = new ProdamusService();
         $payUrl = $prodamus->generatePaymentLink($userId, $orderId, (float) $price);
 
-        $text = $this->textService->get('msg_paywall_text', "Твой бесплатный период завершён 🌙\n\nЧтобы я продолжала быть рядом — питание, кожа, энергия и поддержка — оформи подписку\.\n\nЭто инвестиция в себя, которая окупается ежедневно 💎\n\n_Оплата возможна в разных валютах_");
+        $text = $this->textService->get('msg_paywall_text', "Твой бесплатный период завершён 🌙\n\nЧтобы я продолжала быть рядом — питание, кожа, энергия и поддержка — оформи подписку.\n\nЭто инвестиция в себя, которая окупается ежедневно 💎\n\n_Оплата возможна в разных валютах_", true);
 
         $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => sprintf($this->textService->get('btn_subscribe_stars', "✨ Оформить подписку — %d ₽"), $price), 'url' => $payUrl]],
+            [['text' => sprintf($this->textService->get('btn_subscribe_stars', "✨ Оформить подписку — %d ₽", true), $price), 'url' => $payUrl]],
         ]);
 
         $this->telegram->sendMessage($chatId, $text, $keyboard);
@@ -92,8 +92,8 @@ class SubscriptionService
 
         $this->telegram->sendInvoice(
             $chatId,
-            $this->textService->get('invoice_title', 'Prime Glow подписка'),
-            sprintf($this->textService->get('invoice_description', "Полный доступ к AI-ассистенту на %d дней: питание, косметика, коучинг"), $days),
+            $this->textService->get('invoice_title', 'Prime Glow подписка', true),
+            sprintf($this->textService->get('invoice_description', "Полный доступ к AI-ассистенту на %d дней: питание, косметика, коучинг", true), $days),
             "sub_{$userId}_" . time(),
             $price,
             'XTR'
@@ -145,7 +145,7 @@ class SubscriptionService
         $userService->setSubscriptionEnd($userId, $endsAt);
 
         // Notify user
-        $text = sprintf($this->textService->get('msg_payment_success', "✨ *Оплата прошла успешно\!*\n\nТвой доступ продлён до %s\nЯ продолжаю работать для тебя 💎"), date('d\.m\.Y', strtotime($endsAt)));
+        $text = sprintf($this->textService->get('msg_payment_success', "✨ *Оплата прошла успешно!*\n\nТвой доступ продлён до %s\nЯ продолжаю работать для тебя 💎", true), date('d.m.Y', strtotime($endsAt)));
         
         $this->telegram->sendMessage((int) $user['telegram_id'], $text);
     }

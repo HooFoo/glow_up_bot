@@ -23,6 +23,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Settings::set('log_debug_enabled', $debugEnabled);
         Settings::set('price_subscription', $priceSub);
         Settings::set('price_course', $priceCourse);
+
+        // Handle PDF uploads
+        $personas = ['shadow_queen', 'iron_controller', 'sleeping_muse', 'magnetic_prime'];
+        foreach ($personas as $p) {
+            if (isset($_FILES['gift_pdf_' . $p]) && $_FILES['gift_pdf_' . $p]['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['gift_pdf_' . $p];
+                $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+                if (strtolower($ext) !== 'pdf') {
+                    throw new Exception('Файл для ' . $p . ' должен быть PDF');
+                }
+                
+                $newName = $p . '_' . time() . '.pdf';
+                $targetPath = \App\Core\Config::getProjectRoot() . '/bot/assets/gifts/' . $newName;
+                
+                if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                    Settings::set('gift_pdf_' . $p, $newName);
+                } else {
+                    throw new Exception('Не удалось загрузить файл для ' . $p);
+                }
+            }
+        }
  
         $success = 'Настройки успешно сохранены.';
     } catch (\Throwable $e) {
@@ -167,6 +188,47 @@ adminHeader('Настройки', 'settings');
         border-color: var(--accent-primary);
         outline: none;
     }
+
+    .file-row {
+        align-items: center;
+    }
+    .file-actions {
+        display: flex;
+        gap: 8px;
+    }
+    .btn-upload {
+        background: var(--bg-body);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.2s;
+    }
+    .btn-upload:hover {
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+    }
+    .btn-view {
+        text-decoration: none;
+        background: var(--bg-body);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.2s;
+    }
+    .btn-view:hover {
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+    }
 </style>
 
 <div class="settings-container">
@@ -177,7 +239,7 @@ adminHeader('Настройки', 'settings');
         <div class="alert alert-error">❌ <?= $error ?></div>
     <?php endif; ?>
 
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
         <div class="settings-card">
             <div class="settings-group">
                 <h3>📋 Логирование</h3>
@@ -221,6 +283,38 @@ adminHeader('Настройки', 'settings');
                     </div>
                     <input type="number" name="price_course" value="<?= htmlspecialchars(Settings::get('price_course', '10000')) ?>" class="settings-input">
                 </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>🎁 Подарки (PDF)</h3>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">
+                    Эти PDF-файлы отправляются пользователям после прохождения квиза в зависимости от их архетипа.
+                </p>
+
+                <?php 
+                $personaMeta = [
+                    'shadow_queen'    => ['label' => 'Тенистая Королева', 'emoji' => '👑'],
+                    'iron_controller' => ['label' => 'Железный Контролер', 'emoji' => '⚙️'],
+                    'sleeping_muse'   => ['label' => 'Спящая Муза', 'emoji' => '🎨'],
+                    'magnetic_prime'  => ['label' => 'Магнитная Прайм', 'emoji' => '💎'],
+                ];
+                foreach ($personaMeta as $p => $meta): 
+                    $currentFile = Settings::get('gift_pdf_' . $p);
+                ?>
+                <div class="input-row file-row">
+                    <div class="toggle-info">
+                        <span class="toggle-label"><?= $meta['emoji'] ?> <?= $meta['label'] ?></span>
+                        <span class="toggle-desc">Файл: <?= htmlspecialchars($currentFile ?: 'по умолчанию') ?></span>
+                    </div>
+                    <div class="file-actions">
+                        <a href="view_gift.php?persona=<?= $p ?>" target="_blank" class="btn-view" title="Просмотреть">👁️</a>
+                        <label class="btn-upload">
+                            📁 Изменить
+                            <input type="file" name="gift_pdf_<?= $p ?>" accept="application/pdf" style="display: none;" onchange="this.parentElement.style.borderColor='var(--accent-primary)'; this.parentElement.innerText='📄 Выбран';">
+                        </label>
+                    </div>
+                </div>
+                <?php endforeach; ?>
             </div>
 
             <div class="form-actions">
