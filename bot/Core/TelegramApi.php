@@ -23,10 +23,15 @@ class TelegramApi
 
     // ─── Sending Messages ────────────────────────────────────────
 
-    public function sendMessage(int|string $chatId, string $text, ?array $replyMarkup = null, string $parseMode = 'MarkdownV2'): array
+    public function sendMessage(int|string $chatId, string $text, ?array $replyMarkup = null, string $parseMode = 'Markdown'): array
     {
         if (trim($text) === '') {
             return ['ok' => false, 'error' => 'Message text is empty'];
+        }
+
+        // Standard Markdown uses ** for bold, but Telegram (both V1 and V2) uses single *
+        if ($parseMode === 'Markdown' || $parseMode === 'MarkdownV2') {
+            $text = str_replace('**', '*', $text);
         }
 
         $params = [

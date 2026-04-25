@@ -140,10 +140,10 @@ class QuizService
         $questionNumber = $index + 1;
         $total = count(self::QUESTION_IDS);
         
-        // Formatting with MarkdownV2
-        $header = sprintf($this->textService->get('msg_quiz_header', "❓ *Вопрос %d/%d*"), $questionNumber, $total);
+        // Formatting
+        $header = sprintf($this->textService->get('msg_quiz_header', "❓ *Вопрос %d/%d*", true), $questionNumber, $total);
         $text = "{$header}\n";
-        $text .= "*«" . TelegramApi::escapeMarkdownV2($question['text']) . "»*\n\n";
+        $text .= "*«" . $question['text'] . "»*\n\n";
         
         $buttons = [];
         $row = [];
@@ -164,11 +164,11 @@ class QuizService
             }
 
             // Body: "1. «Title» — Description"
-            $text .= "{$idx}\. *«" . TelegramApi::escapeMarkdownV2($titleText) . "»*";
+            $text .= "{$idx}. *«" . $titleText . "»*";
             if ($remainingText) {
                 // If the remaining text doesn't start with a separator, add one
                 $separator = (str_starts_with($remainingText, ':') || str_starts_with($remainingText, '—')) ? '' : ' — ';
-                $text .= $separator . TelegramApi::escapeMarkdownV2($remainingText);
+                $text .= $separator . $remainingText;
             }
             $text .= "\n";
             

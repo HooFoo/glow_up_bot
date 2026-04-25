@@ -232,7 +232,7 @@ class OnboardingService
         }
 
         $q = $this->getLocalizedQuestion($index);
-        $header = $this->textService->get('msg_onboarding_header', '📋 *Настройка профиля*');
+        $header = $this->textService->get('msg_onboarding_header', '📋 *Настройка профиля*', true);
         $text = "{$header} \n\n {$q['text']}";
 
         $userService = new UserService();
@@ -242,10 +242,10 @@ class OnboardingService
             foreach ($q['options'] as $key => $label) {
                 $buttons[] = [['text' => $label, 'callback_data' => "onboard_{$q['id']}_{$key}"]];
             }
-            $this->telegram->sendMessage($chatId, $text, TelegramApi::inlineKeyboard($buttons));
+            $this->telegram->sendMessage($chatId, $text, TelegramApi::inlineKeyboard($buttons), 'Markdown');
             $userService->updateState($userId, "onboard_{$q['id']}");
         } elseif ($q['type'] === 'text') {
-            $this->telegram->sendMessage($chatId, $text);
+            $this->telegram->sendMessage($chatId, $text, null, 'Markdown');
             $userService->updateState($userId, "onboard_{$q['id']}");
         }
     }
@@ -272,8 +272,8 @@ class OnboardingService
     {
         $userService = new UserService();
         $user = $userService->findById($userId);
-        $name = TelegramApi::escapeMarkdownV2($user['first_name'] ?? 'Подруга');
-        $text = sprintf($this->textService->get('msg_main_menu_text', "Привет, %s\! ✨\n\nВыбери, с чего начнём сегодня:"), $name);
+        $name = $user['first_name'] ?? 'Подруга';
+        $text = sprintf($this->textService->get('msg_main_menu_text', "Привет, %s! ✨\n\nВыбери, с чего начнём сегодня:", true), $name);
 
         $keyboard = TelegramApi::inlineKeyboard([
             [['text' => $this->textService->get('btn_mode_nutrition', '🥗 Питание'), 'callback_data' => 'mode_nutrition']],
@@ -283,17 +283,17 @@ class OnboardingService
             [['text' => $this->textService->get('btn_mode_profile', '👤 Мой профиль'), 'callback_data' => 'show_profile']],
         ]);
 
-        $this->telegram->sendMessage($chatId, $text, $keyboard);
+        $this->telegram->sendMessage($chatId, $text, $keyboard, 'Markdown');
     }
 
     private function getLocalizedQuestion(int $index): array
     {
         $q = self::QUESTIONS[$index];
-        $q['text'] = $this->textService->get("onboard_q_{$q['id']}_text", $q['text']);
+        $q['text'] = $this->textService->get("onboard_q_{$q['id']}_text", $q['text'], true);
         
         if (isset($q['options'])) {
             foreach ($q['options'] as $key => $label) {
-                $q['options'][$key] = $this->textService->get("onboard_q_{$q['id']}_opt_{$key}", $label);
+                $q['options'][$key] = $this->textService->get("onboard_q_{$q['id']}_opt_{$key}", $label, true);
             }
         }
         
