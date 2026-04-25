@@ -28,7 +28,9 @@ function sendMessageSafe(Database $db, TelegramApi $telegram, TextService $textS
         return;
     }
 
-    $text = $textService->get($contentKey);
+
+    $text = $textService->get($contentKey, '', true);
+
     if (!empty($text)) {
         // TextService::get() already escapes for MarkdownV2
         if (!empty($buttons)) {
@@ -72,8 +74,8 @@ foreach ($users as $user) {
         $coursePrice = Config::getProdamusCoursePrice();
         $subPrice = Config::getProdamusSubscriptionPrice();
         sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_trial_end_paths', null, [
-            [['text' => sprintf($textService->get('btn_trial_nastya', 'С Настей (%dр)'), $coursePrice), 'callback_data' => 'trial_nastya'], ['text' => sprintf($textService->get('btn_trial_bot', 'С ботом (%dр)'), $subPrice), 'callback_data' => 'trial_bot']],
-            [['text' => $textService->get('btn_trial_pdf', 'Гайд'), 'callback_data' => 'trial_pdf'], ['text' => $textService->get('btn_trial_demo', 'Демо-промпт'), 'callback_data' => 'trial_demo']]
+            [['text' => sprintf($textService->get('btn_trial_nastya', 'С Настей (%dр)', true), $coursePrice), 'callback_data' => 'trial_nastya'], ['text' => sprintf($textService->get('btn_trial_bot', 'С ботом (%dр)', true), $subPrice), 'callback_data' => 'trial_bot']],
+            [['text' => $textService->get('btn_trial_pdf', 'Гайд', true), 'callback_data' => 'trial_pdf'], ['text' => $textService->get('btn_trial_demo', 'Демо-промпт', true), 'callback_data' => 'trial_demo']]
         ]);
         
         // Also send limited mode intro if not paid

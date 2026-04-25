@@ -259,8 +259,8 @@ function handleCommand(int $chatId, int $userId, string $text, array $user, Tele
                 }
 
                 $keyboard = TelegramApi::inlineKeyboard([
-                    [['text' => $textService->get('btn_edit_profile', '✏️ Редактировать профиль'), 'callback_data' => 'edit_profile']],
-                    [['text' => $textService->get('btn_back_to_menu', '⬅️ Назад в меню'), 'callback_data' => 'back_to_menu']],
+                    [['text' => $textService->get('btn_edit_profile', '✏️ Редактировать профиль', true), 'callback_data' => 'edit_profile']],
+                    [['text' => $textService->get('btn_back_to_menu', '⬅️ Назад в меню', true), 'callback_data' => 'back_to_menu']],
                 ]);
                 $telegram->sendMessage($chatId, $text, $keyboard);
             } else {
@@ -400,10 +400,10 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
 
             $textService = new \App\Services\TextService();
             $labels = [
-                'nutrition'        => $textService->get('btn_mode_nutrition', '🥗 Питание'),
-                'cosmetics'        => $textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог'),
-                'beauty_assistant' => $textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент'),
-                'practices'        => $textService->get('btn_mode_practices', '🧘‍♀️ Практики'),
+                'nutrition'        => $textService->get('btn_mode_nutrition', '🥗 Питание', true),
+                'cosmetics'        => $textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог', true),
+                'beauty_assistant' => $textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент', true),
+                'practices'        => $textService->get('btn_mode_practices', '🧘‍♀️ Практики', true),
             ];
             $labelEscaped = TelegramApi::escapeMarkdownV2($labels[$mode]);
             $msgKey = "msg_mode_{$mode}_switched";
@@ -444,7 +444,7 @@ function sendLegalTerms(int $chatId, TelegramApi $telegram): void
     }
 
     $keyboard = TelegramApi::inlineKeyboard([
-        [['text' => $textService->get('btn_accept_terms', 'Принимаю'), 'callback_data' => 'accept_terms']],
+        [['text' => $textService->get('btn_accept_terms', 'Принимаю', true), 'callback_data' => 'accept_terms']],
     ]);
 
     // Use legacy 'Markdown' for this message to support links without strict V2 escaping
@@ -464,7 +464,7 @@ function sendWelcome(int $chatId, TelegramApi $telegram): void
     }
 
     $keyboard = TelegramApi::inlineKeyboard([
-        [['text' => $textService->get('btn_start_onboarding', '✨ НАЧАТЬ НАСТРОЙКУ'), 'callback_data' => 'start_quiz_intro']],
+        [['text' => $textService->get('btn_start_onboarding', '✨ НАЧАТЬ НАСТРОЙКУ', true), 'callback_data' => 'start_quiz_intro']],
     ]);
 
     $telegram->sendMessage($chatId, $text, $keyboard, 'Markdown');
@@ -477,11 +477,11 @@ function sendMainMenu(int $chatId, array $user, TelegramApi $telegram): void
     $text = sprintf($textService->get('msg_main_menu_text', "Привет, %s! ✨\n\nВыбери, с чего начнём сегодня:", true), $name);
 
     $keyboard = TelegramApi::inlineKeyboard([
-        [['text' => $textService->get('btn_mode_nutrition', '🥗 Питание'), 'callback_data' => 'mode_nutrition']],
-        [['text' => $textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог'), 'callback_data' => 'mode_cosmetics']],
-        [['text' => $textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент'), 'callback_data' => 'mode_beauty_assistant']],
-        [['text' => $textService->get('btn_mode_practices', '🧘‍♀️ Практики (доступ в Prime)'), 'callback_data' => 'mode_practices']],
-        [['text' => $textService->get('btn_mode_profile', '👤 Мой профиль'), 'callback_data' => 'show_profile']],
+        [['text' => $textService->get('btn_mode_nutrition', '🥗 Питание', true), 'callback_data' => 'mode_nutrition']],
+        [['text' => $textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог', true), 'callback_data' => 'mode_cosmetics']],
+        [['text' => $textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент', true), 'callback_data' => 'mode_beauty_assistant']],
+        [['text' => $textService->get('btn_mode_practices', '🧘‍♀️ Практики (доступ в Prime)', true), 'callback_data' => 'mode_practices']],
+        [['text' => $textService->get('btn_mode_profile', '👤 Мой профиль', true), 'callback_data' => 'show_profile']],
     ]);
 
     $telegram->sendMessage($chatId, $text, $keyboard, 'Markdown');
