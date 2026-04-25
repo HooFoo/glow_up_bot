@@ -437,17 +437,18 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
 function sendLegalTerms(int $chatId, TelegramApi $telegram): void
 {
     $textService = new \App\Services\TextService();
-    $text = $textService->get('msg_legal_terms');
+    $text = $textService->get('msg_legal_terms', '', true);
 
     if (!$text) {
-        $text = "Нажимая на кнопку и отвечая на сообщения в чат-боте, вы принимаете условия оферты и выражаете согласие на обработку персональных данных...";
+        $text = "Нажимая на кнопку и отвечая на сообщения в чат-боте, вы принимаете условия [оферты](https://admin.anketa.prodamus.ru/files/download/305056/944f19f129c825a682d68629b9986d4b) и выражаете [согласие](https://disk.yandex.ru/i/Ib2B2c7-SCeT9A) на обработку персональных данных согласно [Политике конфиденциальности](https://disk.yandex.ru/i/RbKm7-MsDOjpLQ), а также даете [согласие](https://disk.yandex.ru/i/BGrS3ie1gWj7kQ) на получение рекламных рассылок\n\nP.S. Здесь ты будешь получать только полезную информацию, без спама и воды.";
     }
 
     $keyboard = TelegramApi::inlineKeyboard([
         [['text' => $textService->get('btn_accept_terms', 'Принимаю'), 'callback_data' => 'accept_terms']],
     ]);
 
-    $telegram->sendMessage($chatId, $text, $keyboard, 'MarkdownV2');
+    // Use legacy 'Markdown' for this message to support links without strict V2 escaping
+    $telegram->sendMessage($chatId, $text, $keyboard, 'Markdown');
 }
 
 function sendWelcome(int $chatId, TelegramApi $telegram): void
