@@ -159,10 +159,11 @@ class ChatService
 
         // 2. Mode-specific prompt
         $modePromptKey = match ($mode) {
-            'nutrition'  => 'prompt_nutrition_system',
-            'cosmetics'  => 'prompt_cosmetics_system',
-            'coach'      => 'prompt_coach_system',
-            default      => 'prompt_nutrition_system',
+            'nutrition'        => 'prompt_nutrition_system',
+            'cosmetics'        => 'prompt_cosmetics_system',
+            'beauty_assistant' => 'prompt_beauty_assistant_system',
+            'practices'        => 'prompt_practices_system',
+            default            => 'prompt_nutrition_system',
         };
         $modePrompt = $this->textService->get($modePromptKey, '', true);
 

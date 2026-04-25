@@ -277,8 +277,9 @@ class OnboardingService
 
         $keyboard = TelegramApi::inlineKeyboard([
             [['text' => $this->textService->get('btn_mode_nutrition', '🥗 Питание'), 'callback_data' => 'mode_nutrition']],
-            [['text' => $this->textService->get('btn_mode_cosmetics', '✨ Косметика'), 'callback_data' => 'mode_cosmetics']],
-            [['text' => $this->textService->get('btn_mode_coach', '🧘 Коучинг'), 'callback_data' => 'mode_coach']],
+            [['text' => $this->textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог'), 'callback_data' => 'mode_cosmetics']],
+            [['text' => $this->textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент'), 'callback_data' => 'mode_beauty_assistant']],
+            [['text' => $this->textService->get('btn_mode_practices', '🧘‍♀️ Практики (доступ в Prime)'), 'callback_data' => 'mode_practices']],
             [['text' => $this->textService->get('btn_mode_profile', '👤 Мой профиль'), 'callback_data' => 'show_profile']],
         ]);
 

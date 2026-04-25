@@ -214,10 +214,16 @@ function handleCommand(int $chatId, int $userId, string $text, array $user, Tele
             $telegram->sendMessage($chatId, $textService->get('msg_mode_cosmetics_header', '✨ Режим: *Эксперт по косметике*\. Присылай фото составов или задавай вопросы\!'));
             break;
 
-        case '/coach':
+        case '/assistant':
             $userService = new UserService();
-            $userService->setActiveMode($userId, 'coach');
-            $telegram->sendMessage($chatId, $textService->get('msg_mode_coach_header', '🧘 Режим: *Коуч*\. Расскажи, как ты себя чувствуешь\.'));
+            $userService->setActiveMode($userId, 'beauty_assistant');
+            $telegram->sendMessage($chatId, $textService->get('msg_mode_beauty_assistant_header', '🤖 Режим: *Beauty-ассистент*\. Задавай вопросы\!'));
+            break;
+
+        case '/practices':
+            $userService = new UserService();
+            $userService->setActiveMode($userId, 'practices');
+            $telegram->sendMessage($chatId, $textService->get('msg_mode_practices_header', '🧘‍♀️ Режим: *Практики*\.'));
             break;
 
         case '/subscribe':
@@ -370,19 +376,39 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
     // Mode switching
     if (str_starts_with($data, 'mode_')) {
         $mode = str_replace('mode_', '', $data);
-        $validModes = ['nutrition', 'cosmetics', 'coach'];
+        
+        // Handle practices separately (upsell check)
+        if ($mode === 'practices') {
+            $subService = new SubscriptionService($telegram);
+            if (!$subService->checkAccess($user) || empty($user['subscription_end'])) {
+                // Not a subscriber? Show upsell message instead of switching
+                $textService = new \App\Services\TextService();
+                $upsellText = $textService->get('msg_mode_practices_locked', "Этот раздел доступен только в расширенной версии Prime ✨\n\nХочешь подключиться и получить доступ к эксклюзивным практикам?");
+                $keyboard = TelegramApi::inlineKeyboard([
+                    [['text' => $textService->get('btn_upsell_practices', '✨ Подключить Prime'), 'callback_data' => 'buy_subscription']],
+                    [['text' => $textService->get('btn_back_to_menu', '⬅️ Назад в меню'), 'callback_data' => 'back_to_menu']],
+                ]);
+                $telegram->sendMessage($chatId, $upsellText, $keyboard);
+                return;
+            }
+        }
+
+        $validModes = ['nutrition', 'cosmetics', 'beauty_assistant', 'practices'];
         if (in_array($mode, $validModes)) {
             $userService = new UserService();
             $userService->setActiveMode($userId, $mode);
 
             $textService = new \App\Services\TextService();
             $labels = [
-                'nutrition' => $textService->get('btn_mode_nutrition', '🥗 Питание'),
-                'cosmetics' => $textService->get('btn_mode_cosmetics', '✨ Косметика'),
-                'coach'     => $textService->get('btn_mode_coach', '🧘 Коучинг')
+                'nutrition'        => $textService->get('btn_mode_nutrition', '🥗 Питание'),
+                'cosmetics'        => $textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог'),
+                'beauty_assistant' => $textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент'),
+                'practices'        => $textService->get('btn_mode_practices', '🧘‍♀️ Практики'),
             ];
             $labelEscaped = TelegramApi::escapeMarkdownV2($labels[$mode]);
-            $msg = sprintf($textService->get('msg_mode_switched', "Режим переключён на: *%s*\n\n Чем я могу тебе помочь? Спроси что угодно и я отвечу\!"), $labelEscaped);
+            $msgKey = "msg_mode_{$mode}_switched";
+            $defaultMsg = "Режим переключён на: *%s*\n\n Чем я могу тебе помочь? Спроси что угодно и я отвечу\!";
+            $msg = sprintf($textService->get($msgKey, $defaultMsg), $labelEscaped);
             $telegram->sendMessage($chatId, $msg);
         }
         return;
@@ -451,8 +477,9 @@ function sendMainMenu(int $chatId, array $user, TelegramApi $telegram): void
 
     $keyboard = TelegramApi::inlineKeyboard([
         [['text' => $textService->get('btn_mode_nutrition', '🥗 Питание'), 'callback_data' => 'mode_nutrition']],
-        [['text' => $textService->get('btn_mode_cosmetics', '✨ Косметика'), 'callback_data' => 'mode_cosmetics']],
-        [['text' => $textService->get('btn_mode_coach', '🧘 Коучинг'), 'callback_data' => 'mode_coach']],
+        [['text' => $textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог'), 'callback_data' => 'mode_cosmetics']],
+        [['text' => $textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент'), 'callback_data' => 'mode_beauty_assistant']],
+        [['text' => $textService->get('btn_mode_practices', '🧘‍♀️ Практики (доступ в Prime)'), 'callback_data' => 'mode_practices']],
         [['text' => $textService->get('btn_mode_profile', '👤 Мой профиль'), 'callback_data' => 'show_profile']],
     ]);
 

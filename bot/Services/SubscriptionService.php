@@ -73,10 +73,10 @@ class SubscriptionService
         $prodamus = new ProdamusService();
         $payUrl = $prodamus->generatePaymentLink($userId, $orderId, (float) $price);
 
-        $text = $this->textService->get('msg_paywall_text', "Твой бесплатный период завершён 🌙\n\nЧтобы я продолжала быть рядом — питание, кожа, энергия и поддержка — оформи подписку\.\n\nЭто инвестиция в себя, которая окупается ежедневно 💎");
+        $text = $this->textService->get('msg_paywall_text', "Твой бесплатный период завершён 🌙\n\nЧтобы я продолжала быть рядом — питание, кожа, энергия и поддержка — оформи подписку\.\n\nЭто инвестиция в себя, которая окупается ежедневно 💎\n\n_Оплата возможна в разных валютах_");
 
         $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => sprintf($this->textService->get('btn_subscribe_stars', "✨ Оформить подписку — %d руб."), $price), 'url' => $payUrl]],
+            [['text' => sprintf($this->textService->get('btn_subscribe_stars', "✨ Оформить подписку — %d ₽"), $price), 'url' => $payUrl]],
         ]);
 
         $this->telegram->sendMessage($chatId, $text, $keyboard);

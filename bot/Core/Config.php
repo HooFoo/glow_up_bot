@@ -61,7 +61,7 @@ class Config
         if ($dbPrice !== null) {
             return (int) $dbPrice;
         }
-        return (int) self::get('PRODAMUS_SUBSCRIPTION_PRICE_RUB', 1990);
+        return (int) self::get('PRODAMUS_SUBSCRIPTION_PRICE_RUB', 1010);
     }
 
     public static function getProdamusCoursePrice(): int
