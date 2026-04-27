@@ -74,6 +74,9 @@ try {
         exit;
     }
 
+    // ─── 4.5. Send typing indicator immediately ─────────────────
+    $telegram->sendChatAction($chatId, 'typing');
+
     // ─── Find or create user ────────────────────────────────────
     $user = $userService->findOrCreate($from);
     $userId = (int) $user['id'];

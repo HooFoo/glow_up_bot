@@ -55,6 +55,7 @@ class ChatService
         $this->saveMessage($userId, 'assistant', $reply, $mode);
 
         // Send reply
+        $this->telegram->sendChatAction($chatId, 'typing');
         $this->telegram->sendMessage($chatId, $this->ensureMarkdownV1($reply), null, 'Markdown');
 
         // Increment message count and check counters
@@ -98,6 +99,7 @@ class ChatService
         $this->saveMessage($userId, 'user', $userMsgText, $mode, 'photo');
         $this->saveMessage($userId, 'assistant', $reply, $mode);
 
+        $this->telegram->sendChatAction($chatId, 'typing');
         $this->telegram->sendMessage($chatId, $this->ensureMarkdownV1($reply), null, 'Markdown');
 
         $newCount = $userService->incrementMessageCount($userId);

@@ -202,9 +202,12 @@ class QuizService
         $msg = $this->telegram->sendMessage($chatId, $processingText);
         $processingMessageId = $msg['result']['message_id'] ?? null;
 
-        // 2. Wait for 120 seconds
-        // Note: webhook.php should support background processing via fastcgi_finish_request() and ignore_user_abort(true)
-        sleep(20);
+        // 2. Wait for 20 seconds (simulated AI processing)
+        // Send typing indicator every 5 seconds to keep it active
+        for ($i = 0; $i < 4; $i++) {
+            $this->telegram->sendChatAction($chatId, 'typing');
+            sleep(5);
+        }
 
         // 3. Delete the processing message
         if ($processingMessageId) {
