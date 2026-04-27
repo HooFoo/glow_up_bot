@@ -167,7 +167,24 @@ try {
         $caption = $message['caption'] ?? null;
         $chatService->handlePhoto($chatId, $userId, $largestPhoto['file_id'], $caption);
     } else {
-        $chatService->handleMessage($chatId, $userId, $text);
+        // Check for specific quick action prompts
+        $textService = new \App\Services\TextService();
+        $isHandled = false;
+        
+        if ($text === $textService->get('btn_action_analyze_meal', '📸 Разобрать мой приём пищи', true)) {
+            $telegram->sendMessage($chatId, $textService->get('msg_action_analyze_meal_prompt', '', true));
+            $isHandled = true;
+        } elseif ($text === $textService->get('btn_action_care_routine', '🧴 Собрать мне уход', true)) {
+            $telegram->sendMessage($chatId, $textService->get('msg_action_care_routine_prompt', '', true));
+            $isHandled = true;
+        } elseif ($text === $textService->get('btn_action_analyze_products', '📸 Разобрать мои средства', true)) {
+            $telegram->sendMessage($chatId, $textService->get('msg_action_analyze_products_prompt', '', true));
+            $isHandled = true;
+        }
+
+        if (!$isHandled) {
+            $chatService->handleMessage($chatId, $userId, $text);
+        }
     }
 
 } catch (\Throwable $e) {
@@ -402,22 +419,19 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
             $userService->setActiveMode($userId, $mode);
 
             $textService = new \App\Services\TextService();
+            $keyboard = getQuickActionsKeyboard($mode, $textService);
 
-            if ($mode === 'beauty_assistant') {
-                $chatService = new ChatService($telegram);
-                $chatService->handleMessage($chatId, $userId, "Собери мой прайм день");
-            } else {
-                $labels = [
-                    'nutrition'        => $textService->get('btn_mode_nutrition', '🥗 Питание', true),
-                    'cosmetics'        => $textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог', true),
-                    'beauty_assistant' => $textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент', true),
-                    'practices'        => $textService->get('btn_mode_practices', '🧘‍♀️ Практики', true),
-                ];
-                $msgKey = "msg_mode_{$mode}_switched";
-                $defaultMsg = "Режим переключён на: *%s*\n\n Чем я могу тебе помочь? Спроси что угодно и я отвечу!";
-                $msg = sprintf($textService->get($msgKey, $defaultMsg, true), $labels[$mode]);
-                $telegram->sendMessage($chatId, $msg);
-            }
+            $labels = [
+                'nutrition'        => $textService->get('btn_mode_nutrition', '🥗 Питание', true),
+                'cosmetics'        => $textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог', true),
+                'beauty_assistant' => $textService->get('btn_mode_beauty_assistant', '🤖 Glow Up ассистент', true),
+                'practices'        => $textService->get('btn_mode_practices', '🧘‍♀️ Практики', true),
+            ];
+            $msgKey = "msg_mode_{$mode}_switched";
+            $defaultMsg = "Режим переключён на: *%s*\n\n Чем я могу тебе помочь? Спроси что угодно и я отвечу!";
+            $msg = sprintf($textService->get($msgKey, $defaultMsg, true), $labels[$mode]);
+            
+            $telegram->sendMessage($chatId, $msg, $keyboard, 'Markdown');
         }
         return;
     }
@@ -480,6 +494,10 @@ function sendWelcome(int $chatId, TelegramApi $telegram): void
 
 function sendMainMenu(int $chatId, array $user, TelegramApi $telegram): void
 {
+    // Set default mode to beauty_assistant when entering main menu
+    $userService = new UserService();
+    $userService->setActiveMode((int)$user['id'], 'beauty_assistant');
+
     $textService = new \App\Services\TextService();
     $name = $user['first_name'] ?? 'Подруга';
     $text = sprintf($textService->get('msg_main_menu_text', "Привет, %s! ✨\n\nВыбери, с чего начнём сегодня:", true), $name);
@@ -487,10 +505,61 @@ function sendMainMenu(int $chatId, array $user, TelegramApi $telegram): void
     $keyboard = TelegramApi::inlineKeyboard([
         [['text' => $textService->get('btn_mode_nutrition', '🥗 Питание', true), 'callback_data' => 'mode_nutrition']],
         [['text' => $textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог', true), 'callback_data' => 'mode_cosmetics']],
-        [['text' => $textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент', true), 'callback_data' => 'mode_beauty_assistant']],
+        [['text' => $textService->get('btn_mode_beauty_assistant', '🤖 Glow Up ассистент', true), 'callback_data' => 'mode_beauty_assistant']],
         [['text' => $textService->get('btn_mode_practices', '🧘‍♀️ Практики (доступ в Prime)', true), 'callback_data' => 'mode_practices']],
         [['text' => $textService->get('btn_mode_profile', '👤 Мой профиль', true), 'callback_data' => 'show_profile']],
     ]);
 
+    // When showing main menu, we also want to show the quick actions keyboard for the default mode
+    $replyKeyboard = getQuickActionsKeyboard('beauty_assistant', $textService);
+    
+    // Telegram doesn't support sending both inline_keyboard and reply_keyboard in one message's reply_markup.
+    // However, we can send the main menu with inline keyboard, and the reply keyboard will stay from previous mode 
+    // or we can send a separate message or just rely on the fact that we switch mode.
+    // The requirement says: "Когда мы падаем в главное меню... Убедись, что сейчас по умолчангию выставляется он [Glow Up ассистент]".
+    // "При переключении режимов... нужно отображать меню быстрых действий".
+    
+    // We'll send the main menu message, and then a follow-up or just use the keyboard from the mode.
     $telegram->sendMessage($chatId, $text, $keyboard, 'Markdown');
+    
+    // Also send the reply keyboard for the default mode
+    $modeLabel = $textService->get('btn_mode_beauty_assistant', '🤖 Glow Up ассистент', true);
+    $welcomeMsg = sprintf($textService->get('msg_mode_beauty_assistant_switched', "Режим: *%s*\nЧем я могу помочь?", true), $modeLabel);
+    $telegram->sendMessage($chatId, $welcomeMsg, $replyKeyboard, 'Markdown');
+}
+
+/**
+ * Get the Reply Keyboard for quick actions based on the mode.
+ */
+function getQuickActionsKeyboard(string $mode, \App\Services\TextService $textService): ?array
+{
+    $rows = [];
+    switch ($mode) {
+        case 'beauty_assistant':
+            $rows = [
+                [['text' => $textService->get('btn_action_prime_day', '🥗 Собрать мой Prime-день', true)]],
+                [['text' => $textService->get('btn_action_tired', '😵 Я устала', true)], ['text' => $textService->get('btn_action_glow', '✨ Хочу glow', true)]],
+                [['text' => $textService->get('btn_action_cycle_ritual', '🌙 Ритуал по циклу', true)], ['text' => $textService->get('btn_action_state_diary', '🧠 Дневник состояния', true)]],
+            ];
+            break;
+        case 'nutrition':
+            $rows = [
+                [['text' => $textService->get('btn_action_nutrition_week', '🥗 Собрать мне питание на неделю', true)]],
+                [['text' => $textService->get('btn_action_calories', '⚖️ Понять сколько мне есть', true)]],
+                [['text' => $textService->get('btn_action_analyze_meal', '📸 Разобрать мой приём пищи', true)]],
+            ];
+            break;
+        case 'cosmetics':
+            $rows = [
+                [['text' => $textService->get('btn_action_cosmetics_glow', '✨ Хочу сияние', true)], ['text' => $textService->get('btn_action_acne', '😣 Убрать высыпания', true)]],
+                [['text' => $textService->get('btn_action_skin_tone', '🎯 Выровнять тон', true)]],
+                [['text' => $textService->get('btn_action_care_routine', '🧴 Собрать мне уход', true)]],
+                [['text' => $textService->get('btn_action_analyze_products', '📸 Разобрать мои средства', true)]],
+            ];
+            break;
+        default:
+            return null;
+    }
+    
+    return TelegramApi::replyKeyboard($rows);
 }

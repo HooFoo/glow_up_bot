@@ -166,6 +166,18 @@ class TelegramApi
         return $rows;
     }
 
+    /**
+     * Build a reply keyboard markup.
+     */
+    public static function replyKeyboard(array $rows, bool $resizeKeyboard = true, bool $oneTimeKeyboard = false): array
+    {
+        return [
+            'keyboard'          => $rows,
+            'resize_keyboard'   => $resizeKeyboard,
+            'one_time_keyboard' => $oneTimeKeyboard,
+        ];
+    }
+
     // ─── Callback Query ──────────────────────────────────────────
 
     public function answerCallbackQuery(string $callbackQueryId, ?string $text = null): array
