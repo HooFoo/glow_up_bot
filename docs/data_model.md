@@ -26,7 +26,7 @@ users (1) ──────── (1) user_profiles
 | `last_name` | VARCHAR(255) NULL | Фамилия |
 | `language_code` | VARCHAR(10) NULL | Код языка (ru, en...) |
 | `persona` | VARCHAR(100) NULL | Присвоенный типаж |
-| `active_mode` | ENUM('nutrition','cosmetics','coach') NULL | Текущий режим бота |
+| `active_mode` | ENUM('nutrition','cosmetics','coach','beauty_assistant','practices') NULL | Текущий режим бота |
 | `message_count` | INT UNSIGNED DEFAULT 0 | Счётчик всех сообщений |
 | `quiz_completed_at` | TIMESTAMP NULL | Время завершения квиза |
 | `subscription_end` | TIMESTAMP NULL | Дата окончания подписки |
@@ -97,7 +97,7 @@ users (1) ──────── (1) user_profiles
 | `user_id` | BIGINT UNSIGNED FK → users.id | |
 | `role` | ENUM('user','assistant') NOT NULL | Отправитель |
 | `content` | TEXT NOT NULL | Текст сообщения |
-| `mode` | ENUM('nutrition','cosmetics','coach','quiz') NULL | Режим на момент сообщения |
+| `mode` | ENUM('nutrition','cosmetics','coach','quiz','beauty_assistant','practices') NULL | Режим на момент сообщения |
 | `media_type` | ENUM('text','voice','photo') DEFAULT 'text' | Тип исходного медиа |
 | `telegram_message_id` | INT UNSIGNED NULL | ID сообщения в Telegram |
 | `created_at` | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | |
@@ -115,7 +115,7 @@ users (1) ──────── (1) user_profiles
 |---|---|---|
 | `id` | INT UNSIGNED PK AI | |
 | `user_id` | BIGINT UNSIGNED FK → users.id | |
-| `mode` | ENUM('nutrition','cosmetics','coach','general') NOT NULL | Режим разговора |
+| `mode` | ENUM('nutrition','cosmetics','coach','general','beauty_assistant','practices') NOT NULL | Режим разговора |
 | `summary` | TEXT NOT NULL | Текст резюме |
 | `messages_covered_to` | INT UNSIGNED | Счётчик сообщений до которого сжато |
 | `created_at` | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | |
@@ -164,7 +164,7 @@ CREATE TABLE `users` (
   `last_name` VARCHAR(255) DEFAULT NULL,
   `language_code` VARCHAR(10) DEFAULT NULL,
   `persona` VARCHAR(100) DEFAULT NULL,
-  `active_mode` ENUM('nutrition','cosmetics','coach') DEFAULT NULL,
+  `active_mode` ENUM('nutrition','cosmetics','coach','beauty_assistant','practices') DEFAULT NULL,
   `message_count` INT UNSIGNED NOT NULL DEFAULT 0,
   `quiz_completed_at` TIMESTAMP NULL DEFAULT NULL,
   `subscription_end` TIMESTAMP NULL DEFAULT NULL,
@@ -199,7 +199,7 @@ CREATE TABLE `messages` (
   `user_id` BIGINT UNSIGNED NOT NULL,
   `role` ENUM('user','assistant') NOT NULL,
   `content` TEXT NOT NULL,
-  `mode` ENUM('nutrition','cosmetics','coach','quiz') DEFAULT NULL,
+  `mode` ENUM('nutrition','cosmetics','coach','quiz','beauty_assistant','practices') DEFAULT NULL,
   `media_type` ENUM('text','voice','photo') NOT NULL DEFAULT 'text',
   `telegram_message_id` INT UNSIGNED DEFAULT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -248,7 +248,7 @@ CREATE TABLE `subscriptions` (
 CREATE TABLE `conversation_summaries` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` BIGINT UNSIGNED NOT NULL,
-  `mode` ENUM('nutrition','cosmetics','coach','general') NOT NULL,
+  `mode` ENUM('nutrition','cosmetics','coach','general','beauty_assistant','practices') NOT NULL,
   `summary` TEXT NOT NULL,
   `messages_covered_to` INT UNSIGNED NOT NULL DEFAULT 0,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

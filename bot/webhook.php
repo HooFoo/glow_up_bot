@@ -402,17 +402,22 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
             $userService->setActiveMode($userId, $mode);
 
             $textService = new \App\Services\TextService();
-            $labels = [
-                'nutrition'        => $textService->get('btn_mode_nutrition', '🥗 Питание', true),
-                'cosmetics'        => $textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог', true),
-                'beauty_assistant' => $textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент', true),
-                'practices'        => $textService->get('btn_mode_practices', '🧘‍♀️ Практики', true),
-            ];
-            $labelEscaped = TelegramApi::escapeMarkdownV2($labels[$mode]);
-            $msgKey = "msg_mode_{$mode}_switched";
-            $defaultMsg = "Режим переключён на: *%s*\n\n Чем я могу тебе помочь? Спроси что угодно и я отвечу!";
-            $msg = sprintf($textService->get($msgKey, $defaultMsg, true), $labels[$mode]);
-            $telegram->sendMessage($chatId, $msg);
+
+            if ($mode === 'beauty_assistant') {
+                $chatService = new ChatService($telegram);
+                $chatService->handleMessage($chatId, $userId, "Собери мой прайм день");
+            } else {
+                $labels = [
+                    'nutrition'        => $textService->get('btn_mode_nutrition', '🥗 Питание', true),
+                    'cosmetics'        => $textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог', true),
+                    'beauty_assistant' => $textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент', true),
+                    'practices'        => $textService->get('btn_mode_practices', '🧘‍♀️ Практики', true),
+                ];
+                $msgKey = "msg_mode_{$mode}_switched";
+                $defaultMsg = "Режим переключён на: *%s*\n\n Чем я могу тебе помочь? Спроси что угодно и я отвечу!";
+                $msg = sprintf($textService->get($msgKey, $defaultMsg, true), $labels[$mode]);
+                $telegram->sendMessage($chatId, $msg);
+            }
         }
         return;
     }
