@@ -43,7 +43,9 @@ class ChatService
         $context = $this->buildContext($userId, $mode);
         $context[] = ['role' => 'user', 'content' => $text];
 
-        $reply = $this->openai->chat($context, 0.7, 1024);
+        $reply = $this->callWithThinkingMessage(function() use ($context) {
+            return $this->openai->chat($context, 0.7, 1024);
+        }, $chatId);
 
         if (empty(trim($reply))) {
             \App\Core\Logger::getInstance()->error("Empty response from OpenAI (likely reasoning tokens limit reached)");
@@ -86,7 +88,9 @@ class ChatService
         $prompt = $caption ?: $this->textService->get('msg_chat_vision_prompt_default', 'Что ты видишь на этом фото? Проанализируй с учётом моего профиля.', true);
         $systemPrompt = $this->buildSystemPrompt($userId, $mode);
 
-        $reply = $this->openai->vision($imageData, 'image/jpeg', $prompt, $systemPrompt);
+        $reply = $this->callWithThinkingMessage(function() use ($imageData, $prompt, $systemPrompt) {
+            return $this->openai->vision($imageData, 'image/jpeg', $prompt, $systemPrompt);
+        }, $chatId);
 
         if (empty(trim($reply))) {
             \App\Core\Logger::getInstance()->error("Empty vision response from OpenAI");
@@ -128,6 +132,39 @@ class ChatService
 
         // Process as text message
         $this->handleMessage($chatId, $userId, $text, 'voice');
+    }
+
+    /**
+     * Execute a callback, sending a "thinking" message if it takes longer than 5 seconds.
+     */
+    private function callWithThinkingMessage(callable $callback, int $chatId): string
+    {
+        if (!function_exists('pcntl_fork')) {
+            return $callback();
+        }
+
+        $pid = pcntl_fork();
+        if ($pid == -1) {
+            return $callback();
+        }
+
+        if ($pid == 0) {
+            // Child: wait 5 seconds
+            sleep(5);
+            $this->telegram->sendMessage($chatId, $this->textService->get('msg_chat_thinking', "Я думаю дольше чем обычно. Подожди еще пожалуйста.", true));
+            exit(0);
+        }
+
+        // Parent
+        try {
+            $result = $callback();
+        } finally {
+            // Kill the child
+            posix_kill($pid, SIGKILL);
+            pcntl_waitpid($pid, $status);
+        }
+
+        return $result;
     }
 
     // ─── Context Building ────────────────────────────────────────

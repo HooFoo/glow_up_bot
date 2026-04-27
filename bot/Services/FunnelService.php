@@ -85,6 +85,9 @@ class FunnelService
             } elseif ($data === 'funnel_path_self') {
                 (new ProfileService())->addFact($userId, 'Выбран путь: самостоятельное прохождение с ботом');
                 $this->advanceToOnboarding($chatId, $userId);
+            } elseif ($data === 'funnel_skip_course') {
+                (new ProfileService())->addFact($userId, 'Выбран путь: пропуск предложения курса');
+                $this->advanceToOnboarding($chatId, $userId);
             }
         } elseif ($state === 'funnel_step_nastya_offer' && $data === 'funnel_nastya_go') {
             $this->sendStepNastyaClose($chatId, $userId);
@@ -158,6 +161,9 @@ class FunnelService
                 [
                     ['text' => sprintf($this->textService->get('btn_funnel_nastya', 'С Настей (%d Р)', true), $coursePrice), 'callback_data' => 'funnel_path_nastya'], 
                     ['text' => sprintf($this->textService->get('btn_funnel_bot', 'С ботом (%d Р)', true), $subPrice), 'callback_data' => 'funnel_path_self']
+                ],
+                [
+                    ['text' => $this->textService->get('btn_skip_course', 'Продолжить в бесплатной версии', true), 'callback_data' => 'funnel_skip_course']
                 ]
             ]);
             $this->telegram->sendMessage($chatId, $text, $keyboard);
