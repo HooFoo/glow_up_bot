@@ -16,7 +16,8 @@ class OpenAiApi
         $this->apiKey = Config::getOpenAiKey();
         $this->http = new Client([
             'base_uri' => 'https://api.openai.com/v1/',
-            'timeout'  => 60,
+            'timeout'  => 120, // Increased from 60 to 120
+            'connect_timeout' => 10,
             'headers'  => [
                 'Authorization' => "Bearer {$this->apiKey}",
                 'Content-Type'  => 'application/json',
@@ -195,18 +196,21 @@ class OpenAiApi
                 'body'     => $body
             ]);
 
+            $startTime = microtime(true);
             $response = $this->http->post($endpoint, [
                 'json' => $body,
             ]);
+            $duration = round(microtime(true) - $startTime, 2);
 
             $contents = $response->getBody()->getContents();
             $result = json_decode($contents, true);
 
             // Log Response (Info)
             $tokens = $result['usage'] ?? [];
-            $logger->info("OpenAI Response [{$requestId}]", [
+            $logger->info("OpenAI Response [{$requestId}] in {$duration}s", [
                 'status' => $response->getStatusCode(),
                 'model'  => $result['model'] ?? $model,
+                'duration' => $duration,
                 'tokens' => [
                     'prompt'     => $tokens['prompt_tokens'] ?? 0,
                     'completion' => $tokens['completion_tokens'] ?? 0,

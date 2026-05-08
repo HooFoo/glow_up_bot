@@ -80,7 +80,7 @@ class Config
 
     public static function getOpenAiModel(): string
     {
-        return self::get('OPENAI_MODEL', 'gpt-4o');
+        return self::get('OPENAI_MODEL', 'gpt-4o-mini');
     }
 
     public static function getWhisperModel(): string

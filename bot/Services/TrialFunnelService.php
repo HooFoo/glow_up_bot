@@ -104,6 +104,7 @@ class TrialFunnelService
 
         if ($this->telegram->sendMessage((int)$user['telegram_id'], $text, $keyboard)) {
             $this->updateStep($user['id'], 1);
+            $this->recordMailing((int)$user['id'], 'msg_trial_day1');
         }
     }
 
@@ -116,6 +117,7 @@ class TrialFunnelService
 
         if ($this->telegram->sendMessage((int)$user['telegram_id'], $text, $keyboard)) {
             $this->updateStep($user['id'], 2);
+            $this->recordMailing((int)$user['id'], 'msg_trial_day2');
         }
     }
 
@@ -128,6 +130,7 @@ class TrialFunnelService
 
         if ($this->telegram->sendMessage((int)$user['telegram_id'], $text, $keyboard)) {
             $this->updateStep($user['id'], 3);
+            $this->recordMailing((int)$user['id'], 'msg_trial_day3');
         }
     }
 
@@ -140,6 +143,7 @@ class TrialFunnelService
 
         if ($this->telegram->sendMessage((int)$user['telegram_id'], $text, $keyboard)) {
             $this->updateStep($user['id'], 4);
+            $this->recordMailing((int)$user['id'], 'msg_trial_day4');
         }
     }
 
@@ -148,6 +152,14 @@ class TrialFunnelService
         $this->db->execute(
             "UPDATE users SET trial_funnel_step = :step, last_funnel_message_at = NOW() WHERE id = :id",
             [':step' => $step, ':id' => $userId]
+        );
+    }
+
+    private function recordMailing(int $userId, string $mailingKey): void
+    {
+        $this->db->insert(
+            'INSERT IGNORE INTO sent_mailings (user_id, mailing_key) VALUES (:uid, :key)',
+            [':uid' => $userId, ':key' => $mailingKey]
         );
     }
 }
