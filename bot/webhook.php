@@ -150,11 +150,8 @@ try {
     }
 
     // ─── Access check (paywall) ─────────────────────────────────
-    $subService = new SubscriptionService($telegram);
-    if (!$subService->checkAccess($user)) {
-        $subService->sendPaywall($chatId, $userId);
-        exit;
-    }
+    // Global access check is removed in favor of per-action limits in Free Mode.
+    // SubscriptionService::canPerformAction is called within services.
 
     // ─── Main chat flow ─────────────────────────────────────────
     $chatService = new ChatService($telegram);

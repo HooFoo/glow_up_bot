@@ -110,6 +110,21 @@ class UserService
         return (int) ($user['message_count'] ?? 0);
     }
 
+    public function incrementFreeMealCount(int $userId): void
+    {
+        $this->db->execute('UPDATE users SET free_meal_count = free_meal_count + 1 WHERE id = :id', [':id' => $userId]);
+    }
+
+    public function incrementFreeCosmeticCount(int $userId): void
+    {
+        $this->db->execute('UPDATE users SET free_cosmetic_count = free_cosmetic_count + 1 WHERE id = :id', [':id' => $userId]);
+    }
+
+    public function incrementFreeRequestCount(int $userId): void
+    {
+        $this->db->execute('UPDATE users SET free_request_count = free_request_count + 1 WHERE id = :id', [':id' => $userId]);
+    }
+
     public function setSubscriptionEnd(int $userId, ?string $datetime): void
     {
         $this->db->execute('UPDATE users SET subscription_end = :sub_end WHERE id = :id', [':sub_end' => $datetime, ':id' => $userId]);

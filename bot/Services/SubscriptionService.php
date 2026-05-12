@@ -23,31 +23,65 @@ class SubscriptionService
     }
 
     /**
-     * Check if user has access (subscription or free period).
-     * Returns true if access is granted.
+     * Check if user has an active paid subscription.
+     */
+    public function hasActiveSubscription(array $user): bool
+    {
+        return !empty($user['subscription_end']) && strtotime($user['subscription_end']) > time();
+    }
+
+    /**
+     * Check if user can perform a specific action (paid or within free limits).
+     */
+    public function canPerformAction(array $user, string $actionType): bool
+    {
+        // Paid users have no limits
+        if ($this->hasActiveSubscription($user)) {
+            return true;
+        }
+
+        // Check specific limits for free users
+        return match ($actionType) {
+            'meal'     => (int)($user['free_meal_count'] ?? 0) < 3,
+            'cosmetic' => (int)($user['free_cosmetic_count'] ?? 0) < 1,
+            'request'  => (int)($user['free_request_count'] ?? 0) < 1,
+            default    => false,
+        };
+    }
+
+    /**
+     * Send message when limit is reached.
+     */
+    public function sendLimitReachedMessage(int $chatId, string $actionType): void
+    {
+        $textKey = match ($actionType) {
+            'meal'     => 'msg_limit_reached_meal',
+            'cosmetic' => 'msg_limit_reached_cosmetic',
+            'request'  => 'msg_limit_reached_request',
+            default    => 'msg_limit_reached_request',
+        };
+
+        $text = $this->textService->get($textKey, "Лимит исчерпан. Попробуй позже или оформи подписку ✨", true);
+        
+        $price = Config::getProdamusPrice();
+        $prodamus = new ProdamusService();
+        $orderId = 'sub_limit_' . $chatId . '_' . time();
+        $payUrl = $prodamus->generatePaymentLink($chatId, $orderId, (float) $price);
+
+        $keyboard = TelegramApi::inlineKeyboard([
+            [['text' => $this->textService->get('btn_limit_buy_sub', '✨ Перейти в Prime', true), 'url' => $payUrl]],
+        ]);
+
+        $this->telegram->sendMessage($chatId, $text, $keyboard);
+    }
+
+    /**
+     * DEPRECATED: Use canPerformAction instead.
+     * Kept for backward compatibility if needed during transition.
      */
     public function checkAccess(array $user): bool
     {
-        // Quiz not completed → no access (should go to quiz)
-        if (empty($user['quiz_completed_at'])) {
-            return false;
-        }
-
-        // Active subscription?
-        if (!empty($user['subscription_end']) && strtotime($user['subscription_end']) > time()) {
-            return true;
-        }
-
-        // Free trial period?
-        $freeDays = Config::getFreeDays();
-        $quizCompletedAt = strtotime($user['quiz_completed_at']);
-        $freeUntil = $quizCompletedAt + ($freeDays * 86400);
-
-        if (time() < $freeUntil) {
-            return true;
-        }
-
-        return false;
+        return $this->hasActiveSubscription($user);
     }
 
     /**
