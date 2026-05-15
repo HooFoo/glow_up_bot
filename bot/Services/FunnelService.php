@@ -142,7 +142,12 @@ class FunnelService
     {
         $this->userService->updateState($userId, 'funnel_step_4');
         $text = $this->textService->get('msg_step_4_value', '', true);
-        if (!empty($text)) {
+
+        $videoPath = __DIR__ . '/../assets/video/step_4.mp4';
+
+        if (file_exists($videoPath)) {
+            $this->telegram->sendVideo($chatId, $videoPath, $text);
+        } elseif (!empty($text)) {
             $this->telegram->sendMessage($chatId, $text);
         } else {
             $this->advanceToStep5($chatId, $userId);

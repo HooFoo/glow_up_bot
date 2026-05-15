@@ -132,6 +132,38 @@ class TelegramApi
         return $result;
     }
 
+    public function sendVideo(int|string $chatId, string $filePath, ?string $caption = null, ?array $replyMarkup = null): array
+    {
+        $multipart = [
+            ['name' => 'chat_id', 'contents' => (string) $chatId],
+            ['name' => 'video', 'contents' => fopen($filePath, 'r'), 'filename' => basename($filePath)],
+        ];
+        if ($caption) {
+            $multipart[] = ['name' => 'caption', 'contents' => $caption];
+            $multipart[] = ['name' => 'parse_mode', 'contents' => 'MarkdownV2'];
+        }
+        if ($replyMarkup) {
+            $multipart[] = ['name' => 'reply_markup', 'contents' => json_encode($replyMarkup)];
+        }
+
+        $response = $this->http->post("{$this->baseUrl}/sendVideo", [
+            'multipart' => $multipart,
+        ]);
+
+        $result = json_decode($response->getBody()->getContents(), true);
+
+        if ($result['ok'] === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
+            // Retry without parse_mode
+            $multipart = array_filter($multipart, fn($item) => $item['name'] !== 'parse_mode');
+            $response = $this->http->post("{$this->baseUrl}/sendVideo", [
+                'multipart' => $multipart,
+            ]);
+            return json_decode($response->getBody()->getContents(), true);
+        }
+
+        return $result;
+    }
+
     // ─── Chat Actions ────────────────────────────────────────────
 
     public function sendChatAction(int|string $chatId, string $action = 'typing'): array
