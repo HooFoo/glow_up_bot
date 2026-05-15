@@ -62,28 +62,6 @@ foreach ($users as $user) {
     $now = new \DateTime();
     $daysSince = $createdAt->diff($now)->days;
 
-    // Trial Period (Days 1 to 2)
-    if ($daysSince == 1) {
-        sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_day_1_value');
-    } elseif ($daysSince == 2) {
-        // Send Day 2 value
-        sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_day_2_value');
-        
-        // Final Trial notice
-        sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_trial_end');
-        $coursePrice = Config::getProdamusCoursePrice();
-        $subPrice = Config::getProdamusSubscriptionPrice();
-        sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_trial_end_paths', null, [
-            [['text' => sprintf($textService->get('btn_trial_nastya', 'С Настей (%dр)', true), $coursePrice), 'callback_data' => 'trial_nastya'], ['text' => sprintf($textService->get('btn_trial_bot', 'С ботом (%dр)', true), $subPrice), 'callback_data' => 'trial_bot']],
-            [['text' => $textService->get('btn_trial_pdf', 'Гайд', true), 'callback_data' => 'trial_pdf'], ['text' => $textService->get('btn_trial_demo', 'Демо-промпт', true), 'callback_data' => 'trial_demo']]
-        ]);
-        
-        // Also send limited mode intro if not paid
-        if (!$isPaid) {
-            sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_limited_mode_intro');
-        }
-    }
-
     // Post-trial FREE logic
     if ($daysSince > 2 && !$isPaid) {
         $postTrialDays = $daysSince - 2;

@@ -39,7 +39,7 @@ class TrialFunnelService
             AND onboarding_completed_at <= DATE_SUB(NOW(), INTERVAL 3 HOUR)
             AND onboarding_completed_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
             AND is_blocked = 0
-            AND subscription_end IS NULL OR subscription_end < NOW()
+            AND (subscription_end IS NULL OR subscription_end < NOW())
         ");
 
         foreach ($users as $user) {
@@ -55,7 +55,7 @@ class TrialFunnelService
             WHERE trial_funnel_step = 1 
             AND last_funnel_message_at <= DATE_SUB(NOW(), INTERVAL 20 HOUR)
             AND is_blocked = 0
-            AND subscription_end IS NULL OR subscription_end < NOW()
+            AND (subscription_end IS NULL OR subscription_end < NOW())
         ");
 
         foreach ($users as $user) {
@@ -71,7 +71,7 @@ class TrialFunnelService
             WHERE trial_funnel_step = 2 
             AND last_funnel_message_at <= DATE_SUB(NOW(), INTERVAL 20 HOUR)
             AND is_blocked = 0
-            AND subscription_end IS NULL OR subscription_end < NOW()
+            AND (subscription_end IS NULL OR subscription_end < NOW())
         ");
 
         foreach ($users as $user) {
@@ -87,7 +87,7 @@ class TrialFunnelService
             WHERE trial_funnel_step = 3 
             AND last_funnel_message_at <= DATE_SUB(NOW(), INTERVAL 20 HOUR)
             AND is_blocked = 0
-            AND subscription_end IS NULL OR subscription_end < NOW()
+            AND (subscription_end IS NULL OR subscription_end < NOW())
         ");
 
         foreach ($users as $user) {
