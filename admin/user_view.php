@@ -34,6 +34,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     } elseif ($_POST['action'] === 'reset_session') {
         $userService->resetUserSession($userId);
+    } elseif ($_POST['action'] === 'send_warmup') {
+        $key = $_POST['key'] ?? '';
+        if ($key) {
+            $text = $textService->get($key, '', true);
+            if ($text) {
+                $chatId = (int)$user['telegram_id'];
+                $keyboard = null;
+                // Specific keyboards for trial funnel messages
+                if ($key === 'msg_trial_day1') {
+                    $keyboard = \App\Core\TelegramApi::inlineKeyboard([[['text' => $textService->get('btn_trial_send_photo', '📸 Отправить фото'), 'callback_data' => 'mode_nutrition']]]);
+                } elseif ($key === 'msg_trial_day2') {
+                    $keyboard = \App\Core\TelegramApi::inlineKeyboard([[['text' => $textService->get('btn_trial_check_cosmetics', '🧴 Разобрать средство'), 'callback_data' => 'mode_cosmetics']]]);
+                } elseif ($key === 'msg_trial_day3') {
+                    $keyboard = \App\Core\TelegramApi::inlineKeyboard([[['text' => $textService->get('btn_trial_build_day', '🥗 Собрать мой день'), 'callback_data' => 'mode_beauty_assistant']]]);
+                } elseif ($key === 'msg_trial_day4') {
+                    $keyboard = \App\Core\TelegramApi::inlineKeyboard([[['text' => $textService->get('btn_trial_full_version', '💎 Хочу полную версию'), 'callback_data' => 'buy_subscription']]]);
+                }
+                
+                if ($telegram->sendMessage($chatId, $text, $keyboard)) {
+                    $db->execute('REPLACE INTO sent_mailings (user_id, mailing_key, sent_at) VALUES (:uid, :key, NOW())', [':uid' => $userId, ':key' => $key]);
+                    
+                    // Sync trial funnel step
+                    $stepMap = ['msg_trial_day1' => 1, 'msg_trial_day2' => 2, 'msg_trial_day3' => 3, 'msg_trial_day4' => 4];
+                    if (isset($stepMap[$key])) {
+                        $db->execute("UPDATE users SET trial_funnel_step = :step, last_funnel_message_at = NOW() WHERE id = :id", [':step' => $stepMap[$key], ':id' => $userId]);
+                    }
+                }
+            }
+        }
     }
     header("Location: user_view.php?id={$userId}");
     exit;
@@ -125,6 +154,41 @@ adminHeader('Пользователь: ' . htmlspecialchars($user['first_name'])
         <div class="field"><span class="field-label">Архетип:</span> <span class="field-value"><?= $user['persona'] ? PersonaService::getPersonaEmoji($user['persona']) . ' ' . PersonaService::getPersonaLabel($user['persona']) : '—' ?></span></div>
         <div class="field"><span class="field-label">Режим:</span> <span class="field-value"><?= $user['active_mode'] ?? '—' ?></span></div>
     </div>
+
+    <div class="profile-card">
+        <h3>🔥 Прогрев</h3>
+        <div class="warmup-list">
+            <?php
+            $warmupMessages = [
+                'msg_trial_day1' => 'День 1: Питание',
+                'msg_trial_day2' => 'День 2: Кожа',
+                'msg_trial_day3' => 'День 3: Мини-день',
+                'msg_trial_day4' => 'День 4: Оффер',
+                'msg_after_demo_followup' => 'После демо (fol)',
+                'msg_return_offer' => 'Возврат (offer)',
+                'msg_active_day_2_nudge' => 'Активность Д2',
+                'msg_active_day_4_upgrade' => 'Активность Д4',
+            ];
+            $sentKeys = array_column($automatedMailings, 'mailing_key');
+            foreach ($warmupMessages as $key => $label): 
+                $isSent = in_array($key, $sentKeys);
+            ?>
+                <div class="warmup-item" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #2a2a3e;">
+                    <div style="font-size: 12px;">
+                        <div style="font-weight: 500; color: <?= $isSent ? 'var(--success)' : 'var(--text-primary)' ?>"><?= $label ?> <?= $isSent ? '✓' : '' ?></div>
+                        <div style="font-size: 9px; color: var(--text-secondary);"><?= $key ?></div>
+                    </div>
+                    <form method="post" style="margin: 0;">
+                        <input type="hidden" name="action" value="send_warmup">
+                        <input type="hidden" name="key" value="<?= $key ?>">
+                        <button type="submit" class="btn <?= $isSent ? 'btn-outline' : 'btn-primary' ?>" style="padding: 3px 8px; font-size: 10px;">
+                            <?= $isSent ? 'Повтор' : 'Отправить' ?>
+                        </button>
+                    </form>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
 </div>
 
 <div class="profile-grid">
@@ -150,6 +214,13 @@ adminHeader('Пользователь: ' . htmlspecialchars($user['first_name'])
                         <div class="m-meta">
                             <span class="m-date"><?= date('d.m.y H:i', strtotime($m['date'])) ?></span>
                             <span class="m-status status-<?= $m['status'] ?>"><?= $m['status'] ?></span>
+                            <?php if ($m['type'] === 'Auto'): ?>
+                                <form method="post" style="margin-top: 4px;">
+                                    <input type="hidden" name="action" value="send_warmup">
+                                    <input type="hidden" name="key" value="<?= $m['key'] ?>">
+                                    <button type="submit" class="btn btn-outline" style="padding: 2px 6px; font-size: 9px; border-color: #5c6bc0; color: #9fa8da;">Повторить</button>
+                                </form>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
