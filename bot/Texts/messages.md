@@ -147,3 +147,12 @@
 > - `✨ Косметика`
 > - `🧘 Коучинг`
 > - `👤 Мой профиль`
+
+---
+
+## PROFILE_TEXTS
+
+`msg_profile_subscription`: "Подписка: "
+`msg_profile_sub_active`: "Активна до %s"
+`msg_profile_sub_inactive`: "Не активна"
+

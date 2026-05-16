@@ -259,6 +259,15 @@ function handleCommand(int $chatId, int $userId, string $text, array $user, Tele
                 $text .= $textService->get('msg_profile_weight_height', "Вес/Рост: ", true) . (($profile['weight_kg'] ?? '?') . " / " . ($profile['height_cm'] ?? '?')) . "\n";
                 $text .= $textService->get('msg_profile_bmi', "BMI: ", true) . ($profile['bmi'] ?? $textService->get('msg_profile_cycle_empty', '—', true)) . "\n";
 
+                // Subscription status
+                $subService = new SubscriptionService($telegram);
+                $isSubscribed = $subService->hasActiveSubscription($user);
+                $statusLabel = $isSubscribed 
+                    ? sprintf($textService->get('msg_profile_sub_active', "Активна до %s", true), date('d.m.Y', strtotime($user['subscription_end'])))
+                    : $textService->get('msg_profile_sub_inactive', "Не активна", true);
+                
+                $text .= $textService->get('msg_profile_subscription', "Подписка: ", true) . $statusLabel . "\n";
+
                 // Cycle phase (dynamically calculated)
                 if (!empty($profile['cycle_phase'])) {
                     $cycleDay = $profile['cycle_day'] ?? null;
