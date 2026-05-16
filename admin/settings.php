@@ -301,6 +301,30 @@ adminHeader('Настройки', 'settings');
                 <?php endforeach; ?>
             </div>
 
+            <div class="settings-group">
+                <h3>📜 Документы (PDF)</h3>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">
+                    Здесь можно загрузить официальные документы, такие как оферта.
+                </p>
+
+                <?php 
+                $offerFile = Settings::get('offer_pdf');
+                ?>
+                <div class="input-row file-row" id="row_offer">
+                    <div class="toggle-info">
+                        <span class="toggle-label">📄 Публичная оферта</span>
+                        <span class="toggle-desc current-filename">Файл: <?= htmlspecialchars($offerFile ?: 'не загружен') ?></span>
+                    </div>
+                    <div class="file-actions">
+                        <a href="view_offer.php" target="_blank" class="btn-view" title="Просмотреть">👁️</a>
+                        <label class="btn-upload" id="label_offer">
+                            📁 Изменить
+                            <input type="file" accept="application/pdf" style="display: none;" onchange="uploadOffer(this)">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Сохранить общие настройки</button>
             </div>
@@ -308,6 +332,51 @@ adminHeader('Настройки', 'settings');
     </form>
 
     <script>
+    async function uploadOffer(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const label = document.getElementById('label_offer');
+        const row = document.getElementById('row_offer');
+        const desc = row.querySelector('.current-filename');
+
+        label.classList.add('uploading');
+        label.innerText = '⌛ Загрузка...';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('ajax/upload_offer.php', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            if (result.ok) {
+                label.innerText = '✅ Готово';
+                desc.innerText = 'Файл: ' + result.filename;
+                label.style.borderColor = 'var(--success)';
+                setTimeout(() => {
+                    label.innerText = '📁 Изменить';
+                    label.classList.remove('uploading');
+                    label.style.borderColor = '';
+                }, 2000);
+            } else {
+                alert('Ошибка: ' + result.error);
+                label.innerText = '❌ Ошибка';
+                setTimeout(() => {
+                    label.innerText = '📁 Изменить';
+                    label.classList.remove('uploading');
+                }, 2000);
+            }
+        } catch (e) {
+            alert('Сетевая ошибка при загрузке');
+            label.innerText = '📁 Изменить';
+            label.classList.remove('uploading');
+        }
+    }
+
     async function uploadFile(persona, input) {
         const file = input.files[0];
         if (!file) return;
