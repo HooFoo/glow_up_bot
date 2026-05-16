@@ -276,11 +276,11 @@ class OnboardingService
         $text = sprintf($this->textService->get('msg_main_menu_text', "Привет, %s! ✨\n\nВыбери, с чего начнём сегодня:", true), $name);
 
         $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => $this->textService->get('btn_mode_nutrition', '🥗 Питание'), 'callback_data' => 'mode_nutrition']],
-            [['text' => $this->textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог'), 'callback_data' => 'mode_cosmetics']],
-            [['text' => $this->textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент'), 'callback_data' => 'mode_beauty_assistant']],
-            [['text' => $this->textService->get('btn_mode_practices', '🧘‍♀️ Практики (доступ в Prime)'), 'callback_data' => 'mode_practices']],
-            [['text' => $this->textService->get('btn_mode_profile', '👤 Мой профиль'), 'callback_data' => 'show_profile']],
+            [['text' => $this->textService->get('btn_mode_nutrition', '🥗 Питание', true), 'callback_data' => 'mode_nutrition']],
+            [['text' => $this->textService->get('btn_mode_cosmetics', '✨ Твой ИИ косметолог', true), 'callback_data' => 'mode_cosmetics']],
+            [['text' => $this->textService->get('btn_mode_beauty_assistant', '🤖 Beauty-ассистент', true), 'callback_data' => 'mode_beauty_assistant']],
+            [['text' => $this->textService->get('btn_mode_practices', '🧘‍♀️ Практики (доступ в Prime)', true), 'callback_data' => 'mode_practices']],
+            [['text' => $this->textService->get('btn_mode_profile', '👤 Мой профиль', true), 'callback_data' => 'show_profile']],
         ]);
 
         $this->telegram->sendMessage($chatId, $text, $keyboard, 'Markdown');
