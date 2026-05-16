@@ -10,7 +10,9 @@ use App\Services\ProfileService;
 use App\Services\SummaryService;
 use App\Services\PersonaService;
 use App\Services\ChatService;
+use App\Services\TextService;
 use App\Core\TelegramApi;
+use App\Core\Database;
 
 $userId = (int) ($_GET['id'] ?? 0);
 if (!$userId) { header('Location: users.php'); exit; }
@@ -18,6 +20,10 @@ if (!$userId) { header('Location: users.php'); exit; }
 $userService = new UserService();
 $user = $userService->findById($userId);
 if (!$user) { header('Location: users.php'); exit; }
+
+$textService = new TextService();
+$telegram = new TelegramApi();
+$db = Database::getInstance();
 
 // Handle Subscription Update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -83,7 +89,6 @@ $chatService = new ChatService($telegram);
 $messageCount = $chatService->getMessageCount($userId);
 
 // Fetch Automated Mailings (from bot/mailing.php)
-$db = \App\Core\Database::getInstance();
 $automatedMailings = $db->fetchAll(
     'SELECT * FROM sent_mailings WHERE user_id = :uid ORDER BY sent_at DESC',
     [':uid' => $userId]
