@@ -65,6 +65,13 @@ class FunnelService
 
     public function handleCallback(int $chatId, int $userId, string $state, string $data): void
     {
+        // Глобальный обработчик для продолжения воронки (пропуск оффера)
+        if ($data === 'funnel_skip_course') {
+            (new ProfileService())->addFact($userId, 'Выбран путь: пропуск предложения курса');
+            $this->advanceToOnboarding($chatId, $userId);
+            return;
+        }
+
         if ($state === 'funnel_step_1' && str_starts_with($data, 'funnel_ans_step1_')) {
             $answer = substr($data, 17); // energy, skin, food, stress
             $mapping = [
@@ -88,9 +95,6 @@ class FunnelService
             } elseif ($data === 'funnel_direct_pay') {
                 (new ProfileService())->addFact($userId, 'Выбран путь: прямая оплата по ссылке');
                 $this->sendDirectPaymentLink($chatId, $userId);
-            } elseif ($data === 'funnel_skip_course') {
-                (new ProfileService())->addFact($userId, 'Выбран путь: пропуск предложения курса');
-                $this->advanceToOnboarding($chatId, $userId);
             }
         } elseif ($state === 'funnel_step_nastya_offer' && $data === 'funnel_nastya_go') {
             $this->sendStepNastyaClose($chatId, $userId);
@@ -109,13 +113,11 @@ class FunnelService
         
         $text = $this->textService->get('msg_course_payment_prompt', "Для оплаты курса с Настей перейдите по ссылке:", true);
         $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => sprintf($this->textService->get('btn_pay_course', 'Оплатить курс — %d Р', true), $price), 'url' => $payUrl]]
+            [['text' => sprintf($this->textService->get('btn_pay_course', 'Оплатить курс — %d Р', true), $price), 'url' => $payUrl]],
+            [['text' => $this->textService->get('btn_skip_course', 'Продолжить в бесплатной версии', true), 'callback_data' => 'funnel_skip_course']]
         ]);
         
         $this->telegram->sendMessage($chatId, $text, $keyboard);
-        
-        // Also advance to onboarding as a fallback or next step
-        $this->advanceToOnboarding($chatId, $userId);
     }
 
     private function sendDirectPaymentLink(int $chatId, int $userId): void
@@ -125,13 +127,11 @@ class FunnelService
         $url = $this->textService->get('btn_payment_link_url', 'https://payform.ru/nvbvDgi/', true);
 
         $keyboard = TelegramApi::inlineKeyboard([
-            [['text' => $btnText, 'url' => $url]]
+            [['text' => $btnText, 'url' => $url]],
+            [['text' => $this->textService->get('btn_skip_course', 'Продолжить в бесплатной версии', true), 'callback_data' => 'funnel_skip_course']]
         ]);
 
         $this->telegram->sendMessage($chatId, $text, $keyboard);
-
-        // Advance to onboarding as a fallback or next step
-        $this->advanceToOnboarding($chatId, $userId);
     }
 
     private function advanceToStep2(int $chatId, int $userId): void
@@ -216,7 +216,8 @@ class FunnelService
         $text = $this->textService->get('msg_step_6_offer_details', '', true);
         if (!empty($text)) {
             $keyboard = TelegramApi::inlineKeyboard([
-                [['text' => $this->textService->get('btn_funnel_go', 'Иду!', true), 'callback_data' => 'funnel_nastya_go']]
+                [['text' => $this->textService->get('btn_funnel_go', 'Иду!', true), 'callback_data' => 'funnel_nastya_go']],
+                [['text' => $this->textService->get('btn_skip_course', 'Продолжить в бесплатной версии', true), 'callback_data' => 'funnel_skip_course']]
             ]);
             $this->telegram->sendMessage($chatId, $text, $keyboard);
         } else {
@@ -230,7 +231,8 @@ class FunnelService
         $text = $this->textService->get('msg_step_7_close', '', true);
         if (!empty($text)) {
             $keyboard = TelegramApi::inlineKeyboard([
-                [['text' => $this->textService->get('btn_funnel_pay', 'Оплата', true), 'callback_data' => 'funnel_nastya_pay']]
+                [['text' => $this->textService->get('btn_funnel_pay', 'Оплата', true), 'callback_data' => 'funnel_nastya_pay']],
+                [['text' => $this->textService->get('btn_skip_course', 'Продолжить в бесплатной версии', true), 'callback_data' => 'funnel_skip_course']]
             ]);
             $this->telegram->sendMessage($chatId, $text, $keyboard);
         } else {
