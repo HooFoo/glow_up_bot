@@ -106,10 +106,7 @@ class FunnelService
     private function sendCoursePaymentLink(int $chatId, int $userId): void
     {
         $price = Config::getProdamusCoursePrice();
-        $orderId = 'course_' . $userId . '_' . time();
-        
-        $prodamus = new ProdamusService();
-        $payUrl = $prodamus->generatePaymentLink($userId, $orderId, (float)$price, 'Курс с Настей');
+        $payUrl = $this->textService->get('btn_course_payment_url', 'https://payform.ru/55bvDjV/', true);
         
         $text = $this->textService->get('msg_course_payment_prompt', "Для оплаты курса с Настей перейдите по ссылке:", true);
         $keyboard = TelegramApi::inlineKeyboard([
