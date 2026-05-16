@@ -125,6 +125,30 @@ class UserService
         $this->db->execute('UPDATE users SET free_request_count = free_request_count + 1 WHERE id = :id', [':id' => $userId]);
     }
 
+    public function tryIncrementFreeMealCount(int $userId, int $limit): bool
+    {
+        return $this->db->execute(
+            'UPDATE users SET free_meal_count = free_meal_count + 1 WHERE id = :id AND free_meal_count < :limit',
+            [':id' => $userId, ':limit' => $limit]
+        ) > 0;
+    }
+
+    public function tryIncrementFreeCosmeticCount(int $userId, int $limit): bool
+    {
+        return $this->db->execute(
+            'UPDATE users SET free_cosmetic_count = free_cosmetic_count + 1 WHERE id = :id AND free_cosmetic_count < :limit',
+            [':id' => $userId, ':limit' => $limit]
+        ) > 0;
+    }
+
+    public function tryIncrementFreeRequestCount(int $userId, int $limit): bool
+    {
+        return $this->db->execute(
+            'UPDATE users SET free_request_count = free_request_count + 1 WHERE id = :id AND free_request_count < :limit',
+            [':id' => $userId, ':limit' => $limit]
+        ) > 0;
+    }
+
     public function setSubscriptionEnd(int $userId, ?string $datetime): void
     {
         $this->db->execute('UPDATE users SET subscription_end = :sub_end WHERE id = :id', [':sub_end' => $datetime, ':id' => $userId]);

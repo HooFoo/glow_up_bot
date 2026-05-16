@@ -31,20 +31,19 @@ class SubscriptionService
     }
 
     /**
-     * Check if user can perform a specific action (paid or within free limits).
+     * Try to consume a free action. Returns true if successful or if user is paid.
      */
-    public function canPerformAction(array $user, string $actionType): bool
+    public function consumeFreeAction(array $user, string $actionType): bool
     {
-        // Paid users have no limits
         if ($this->hasActiveSubscription($user)) {
             return true;
         }
 
-        // Check specific limits for free users
+        $userService = new UserService();
         return match ($actionType) {
-            'meal'     => (int)($user['free_meal_count'] ?? 0) < 3,
-            'cosmetic' => (int)($user['free_cosmetic_count'] ?? 0) < 1,
-            'request'  => (int)($user['free_request_count'] ?? 0) < 1,
+            'meal'     => $userService->tryIncrementFreeMealCount((int)$user['id'], 3),
+            'cosmetic' => $userService->tryIncrementFreeCosmeticCount((int)$user['id'], 1),
+            'request'  => $userService->tryIncrementFreeRequestCount((int)$user['id'], 1),
             default    => false,
         };
     }

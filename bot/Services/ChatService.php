@@ -37,12 +37,15 @@ class ChatService
         
         // Determine action type for limits
         $actionType = 'request';
+        if ($mode === 'nutrition') {
+            $actionType = 'meal';
+        }
         // INCI analysis in cosmetics mode counts as cosmetic limit
         if ($mode === 'cosmetics' && (strlen($text) > 50 || preg_match('/[A-Z]{3,}/', $text))) {
             $actionType = 'cosmetic';
         }
 
-        if (!$subService->canPerformAction($user, $actionType)) {
+        if (!$subService->consumeFreeAction($user, $actionType)) {
             $subService->sendLimitReachedMessage($chatId, $actionType);
             return;
         }
@@ -74,15 +77,6 @@ class ChatService
         $this->telegram->sendChatAction($chatId, 'typing');
         $this->telegram->sendMessage($chatId, $this->ensureMarkdownV1($reply), null, 'Markdown');
 
-        // Increment free mode counters if not paid
-        if (!$subService->hasActiveSubscription($user)) {
-            if ($actionType === 'cosmetic') {
-                $userService->incrementFreeCosmeticCount($userId);
-            } else {
-                $userService->incrementFreeRequestCount($userId);
-            }
-        }
-
         // Increment global message count and check counters
         $newCount = $userService->incrementMessageCount($userId);
         $this->checkCounters($userId, $newCount, $mode);
@@ -106,7 +100,7 @@ class ChatService
             default     => 'request',
         };
 
-        if (!$subService->canPerformAction($user, $actionType)) {
+        if (!$subService->consumeFreeAction($user, $actionType)) {
             $subService->sendLimitReachedMessage($chatId, $actionType);
             return;
         }
@@ -142,15 +136,6 @@ class ChatService
 
         $this->telegram->sendChatAction($chatId, 'typing');
         $this->telegram->sendMessage($chatId, $this->ensureMarkdownV1($reply), null, 'Markdown');
-
-        // Increment free mode counters if not paid
-        if (!$subService->hasActiveSubscription($user)) {
-            match ($actionType) {
-                'meal'     => $userService->incrementFreeMealCount($userId),
-                'cosmetic' => $userService->incrementFreeCosmeticCount($userId),
-                'request'  => $userService->incrementFreeRequestCount($userId),
-            };
-        }
 
         $newCount = $userService->incrementMessageCount($userId);
         $this->checkCounters($userId, $newCount, $mode);
