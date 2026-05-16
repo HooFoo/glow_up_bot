@@ -43,7 +43,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     } elseif ($_POST['action'] === 'send_warmup') {
         $key = $_POST['key'] ?? '';
         if ($key) {
-            $text = $textService->get($key, '', true);
+            $warmupDefaults = [
+                'msg_trial_day1' => "Привет 👀\nдавай сегодня направим фокус на твое питание?\n\nВсе, что ты ешь сегодня это реально даёт тебе энергию или наоборот сливает?\n\nскинь фото своей тарелки 👇 я разберу по макроэлементам и скажу, где ты теряешь ресурс",
+                'msg_trial_day2' => "Привет привет! Сегодня направим фокус на кожу и сияние:\n\nТы знаешь что ты наносишь на свое лицо?\n90% того, что нам рекомендуют либо не работает либо делает хуже\n\nхочешь проверить свои средства?\nскинь фото крема или состав 👇 я скажу:\n— что в нём реально работает\n— а что просто маркетинг",
+                'msg_trial_day3' => "Ты уже попробовала пару функций и, скорее всего, заметила разницу\nно есть нюанс:\n\nотдельные разборы — это не результат\nрезультат даёт система\n\nдавай соберу тебе мини-день под твоё состояние 👇",
+                'msg_trial_day4' => "Смотри, как это обычно происходит:\nдевочки пробуют 1-2 функции\nвидят, что это работает\nно дальше возвращаются в хаос\nпотому что нет системы\n\nв полной версии я как раз собираю тебе это под тебя:\n— питание\n— уход\n— ритм\n— состояние\n\nчтобы ты не начинала заново",
+                'msg_after_demo_followup' => "слушай, как тебе формат с промптом? 👀\n\nполучилось настроить или пока не очень?\n\nесли честно, в одиночку это часто чуть сложнее, чем кажется\n\nпоэтому если захочешь,\nможно собрать это вместе и сразу под тебя\n\nя рядом 🤍",
+                'msg_return_offer' => "слушай, ты уже попробовала этот формат 👀\n\nи ты видишь, что это не просто «поболтать»\n\nесли хочешь реально выстроить систему и не откатываться назад\nможно сделать это вместе\n\nили подключить полный доступ к боту\n\nя рядом 🤍",
+            ];
+            $text = $textService->get($key, $warmupDefaults[$key] ?? '', true);
             if ($text) {
                 $chatId = (int)$user['telegram_id'];
                 $keyboard = null;
@@ -164,34 +172,80 @@ adminHeader('Пользователь: ' . htmlspecialchars($user['first_name'])
         <h3>🔥 Прогрев</h3>
         <div class="warmup-list">
             <?php
-            $warmupMessages = [
+            $trialMessages = [
                 'msg_trial_day1' => 'День 1: Питание',
                 'msg_trial_day2' => 'День 2: Кожа',
                 'msg_trial_day3' => 'День 3: Мини-день',
                 'msg_trial_day4' => 'День 4: Оффер',
+            ];
+            $otherMessages = [
                 'msg_after_demo_followup' => 'После демо (fol)',
                 'msg_return_offer' => 'Возврат (offer)',
                 'msg_active_day_2_nudge' => 'Активность Д2',
                 'msg_active_day_4_upgrade' => 'Активность Д4',
             ];
+
+            $funnelStep = (int)($user['trial_funnel_step'] ?? 0);
+            $lastFunnelAt = $user['last_funnel_message_at'] ?? null;
             $sentKeys = array_column($automatedMailings, 'mailing_key');
-            foreach ($warmupMessages as $key => $label): 
-                $isSent = in_array($key, $sentKeys);
             ?>
-                <div class="warmup-item" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #2a2a3e;">
-                    <div style="font-size: 12px;">
-                        <div style="font-weight: 500; color: <?= $isSent ? 'var(--success)' : 'var(--text-primary)' ?>"><?= $label ?> <?= $isSent ? '✓' : '' ?></div>
-                        <div style="font-size: 9px; color: var(--text-secondary);"><?= $key ?></div>
-                    </div>
-                    <form method="post" style="margin: 0;">
-                        <input type="hidden" name="action" value="send_warmup">
-                        <input type="hidden" name="key" value="<?= $key ?>">
-                        <button type="submit" class="btn <?= $isSent ? 'btn-outline' : 'btn-primary' ?>" style="padding: 3px 8px; font-size: 10px;">
-                            <?= $isSent ? 'Повтор' : 'Отправить' ?>
-                        </button>
-                    </form>
+
+            <!-- Trial Funnel Progress Section -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                    <div style="font-size: 11px; font-weight: 600; color: var(--accent);">ПРОГРЕСС ВОРОНКИ</div>
+                    <div style="font-size: 10px; color: var(--text-secondary);"><?= $funnelStep ?> / 4</div>
                 </div>
-            <?php endforeach; ?>
+                <div style="height: 8px; background: #2a2a3e; border-radius: 4px; overflow: hidden; display: flex; margin-bottom: 12px; border: 1px solid #3d3d5c;">
+                    <?php for($i=1; $i<=4; $i++): ?>
+                        <div style="flex: 1; border-right: 1px solid #1a1a2e; background: <?= $i <= $funnelStep ? 'var(--accent)' : 'transparent' ?>; opacity: <?= $i <= $funnelStep ? '1' : '0.3' ?>"></div>
+                    <?php endfor; ?>
+                </div>
+                
+                <?php foreach ($trialMessages as $key => $label): 
+                    $isSent = in_array($key, $sentKeys);
+                    $stepNum = (int)str_replace('msg_trial_day', '', $key);
+                    $isNext = ($funnelStep + 1 === $stepNum);
+                ?>
+                    <div class="warmup-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #2a2a3e; opacity: <?= ($isSent || $isNext) ? '1' : '0.5' ?>">
+                        <div style="font-size: 12px;">
+                            <div style="font-weight: 500; color: <?= $isSent ? 'var(--success)' : ($isNext ? 'var(--text-primary)' : 'var(--text-secondary)') ?>">
+                                <?= $label ?> <?= $isSent ? '✓' : ($isNext ? '⚡' : '') ?>
+                            </div>
+                            <div style="font-size: 9px; color: var(--text-secondary);"><?= $key ?></div>
+                        </div>
+                        <form method="post" style="margin: 0;">
+                            <input type="hidden" name="action" value="send_warmup">
+                            <input type="hidden" name="key" value="<?= $key ?>">
+                            <button type="submit" class="btn <?= $isSent ? 'btn-outline' : ($isNext ? 'btn-primary' : 'btn-outline') ?>" style="padding: 4px 10px; font-size: 10px; min-width: 80px;">
+                                <?= $isSent ? 'Повтор' : ($isNext ? 'Отправить' : 'Тест') ?>
+                            </button>
+                        </form>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Other Warmup Messages Section -->
+            <div style="margin-top: 10px; border-top: 1px solid #3d3d5c; padding-top: 10px;">
+                <div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">ДОПОЛНИТЕЛЬНЫЕ РАССЫЛКИ</div>
+                <?php foreach ($otherMessages as $key => $label): 
+                    $isSent = in_array($key, $sentKeys);
+                ?>
+                    <div class="warmup-item" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dotted #2a2a3e;">
+                        <div style="font-size: 11px;">
+                            <div style="font-weight: 500; color: <?= $isSent ? 'var(--success)' : 'var(--text-primary)' ?>"><?= $label ?> <?= $isSent ? '✓' : '' ?></div>
+                            <div style="font-size: 8px; color: var(--text-secondary);"><?= $key ?></div>
+                        </div>
+                        <form method="post" style="margin: 0;">
+                            <input type="hidden" name="action" value="send_warmup">
+                            <input type="hidden" name="key" value="<?= $key ?>">
+                            <button type="submit" class="btn btn-outline" style="padding: 2px 8px; font-size: 9px; border-color: #3d3d5c; opacity: 0.8;">
+                                <?= $isSent ? 'Повтор' : 'Отправить' ?>
+                            </button>
+                        </form>
+                    </div>
+                <?php endforeach; ?>
+            </div>
         </div>
     </div>
 </div>
