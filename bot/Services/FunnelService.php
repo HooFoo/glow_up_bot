@@ -85,6 +85,9 @@ class FunnelService
             } elseif ($data === 'funnel_path_self') {
                 (new ProfileService())->addFact($userId, 'Выбран путь: самостоятельное прохождение с ботом');
                 $this->advanceToOnboarding($chatId, $userId);
+            } elseif ($data === 'funnel_direct_pay') {
+                (new ProfileService())->addFact($userId, 'Выбран путь: прямая оплата по ссылке');
+                $this->sendDirectPaymentLink($chatId, $userId);
             } elseif ($data === 'funnel_skip_course') {
                 (new ProfileService())->addFact($userId, 'Выбран путь: пропуск предложения курса');
                 $this->advanceToOnboarding($chatId, $userId);
@@ -112,6 +115,22 @@ class FunnelService
         $this->telegram->sendMessage($chatId, $text, $keyboard);
         
         // Also advance to onboarding as a fallback or next step
+        $this->advanceToOnboarding($chatId, $userId);
+    }
+
+    private function sendDirectPaymentLink(int $chatId, int $userId): void
+    {
+        $text = $this->textService->get('msg_step_5_payment_link', 'ссылка на оплату', true);
+        $btnText = $this->textService->get('btn_payment_link_text', 'Оплатить', true);
+        $url = $this->textService->get('btn_payment_link_url', 'https://payform.ru/nvbvDgi/', true);
+
+        $keyboard = TelegramApi::inlineKeyboard([
+            [['text' => $btnText, 'url' => $url]]
+        ]);
+
+        $this->telegram->sendMessage($chatId, $text, $keyboard);
+
+        // Advance to onboarding as a fallback or next step
         $this->advanceToOnboarding($chatId, $userId);
     }
 
@@ -166,6 +185,9 @@ class FunnelService
                 [
                     ['text' => sprintf($this->textService->get('btn_funnel_nastya', 'С Настей (%d Р)', true), $coursePrice), 'callback_data' => 'funnel_path_nastya'], 
                     ['text' => sprintf($this->textService->get('btn_funnel_bot', 'С ботом (%d Р)', true), $subPrice), 'callback_data' => 'funnel_path_self']
+                ],
+                [
+                    ['text' => $this->textService->get('btn_step_5_direct_pay', 'Оплатить участие', true), 'callback_data' => 'funnel_direct_pay']
                 ],
                 [
                     ['text' => $this->textService->get('btn_skip_course', 'Продолжить в бесплатной версии', true), 'callback_data' => 'funnel_skip_course']
