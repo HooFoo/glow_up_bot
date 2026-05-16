@@ -32,10 +32,13 @@ if (strtolower($ext) !== 'pdf') {
 $newName = 'offer_' . time() . '.pdf';
 $targetPath = Config::getProjectRoot() . '/bot/assets/documents/' . $newName;
 
-// Ensure directory exists
+// Ensure directory exists and is writable
 $dir = dirname($targetPath);
 if (!is_dir($dir)) {
-    mkdir($dir, 0755, true);
+    mkdir($dir, 0777, true);
+}
+if (is_dir($dir) && !is_writable($dir)) {
+    chmod($dir, 0777);
 }
 
 if (move_uploaded_file($file['tmp_name'], $targetPath)) {
