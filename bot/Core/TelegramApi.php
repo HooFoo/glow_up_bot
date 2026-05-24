@@ -70,10 +70,24 @@ class TelegramApi
 
     public function sendDocument(int|string $chatId, string $filePath, ?string $caption = null, ?array $replyMarkup = null): array
     {
-        $multipart = [
-            ['name' => 'chat_id', 'contents' => (string) $chatId],
-            ['name' => 'document', 'contents' => fopen($filePath, 'r'), 'filename' => basename($filePath)],
-        ];
+        $cacheKey = 'file_id_' . md5($filePath);
+        $fileId = Settings::get($cacheKey);
+
+        if ($fileId) {
+            $multipart = [
+                ['name' => 'chat_id', 'contents' => (string) $chatId],
+                ['name' => 'document', 'contents' => $fileId],
+            ];
+        } else {
+            if (function_exists('set_time_limit')) {
+                @set_time_limit(180);
+            }
+            $multipart = [
+                ['name' => 'chat_id', 'contents' => (string) $chatId],
+                ['name' => 'document', 'contents' => fopen($filePath, 'r'), 'filename' => basename($filePath)],
+            ];
+        }
+
         if ($caption) {
             $multipart[] = ['name' => 'caption', 'contents' => $caption];
             $multipart[] = ['name' => 'parse_mode', 'contents' => 'MarkdownV2'];
@@ -84,22 +98,29 @@ class TelegramApi
 
         $response = $this->http->post("{$this->baseUrl}/sendDocument", [
             'multipart' => $multipart,
+            'timeout'   => 120,
         ]);
 
         $result = json_decode($response->getBody()->getContents(), true);
 
         if ($result['ok'] === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
-            // Re-open the file because the previous resource was closed by Guzzle
             $multipart = array_filter($multipart, fn($item) => $item['name'] !== 'parse_mode');
-            foreach ($multipart as &$item) {
-                if ($item['name'] === 'document') {
-                    $item['contents'] = fopen($filePath, 'r');
+            if (!$fileId) {
+                foreach ($multipart as &$item) {
+                    if ($item['name'] === 'document') {
+                        $item['contents'] = fopen($filePath, 'r');
+                    }
                 }
             }
             $response = $this->http->post("{$this->baseUrl}/sendDocument", [
                 'multipart' => $multipart,
+                'timeout'   => 120,
             ]);
-            return json_decode($response->getBody()->getContents(), true);
+            $result = json_decode($response->getBody()->getContents(), true);
+        }
+
+        if (!$fileId && $result['ok'] === true && isset($result['result']['document']['file_id'])) {
+            Settings::set($cacheKey, $result['result']['document']['file_id']);
         }
 
         return $result;
@@ -107,10 +128,24 @@ class TelegramApi
 
     public function sendPhoto(int|string $chatId, string $filePath, ?string $caption = null, ?array $replyMarkup = null): array
     {
-        $multipart = [
-            ['name' => 'chat_id', 'contents' => (string) $chatId],
-            ['name' => 'photo', 'contents' => fopen($filePath, 'r'), 'filename' => basename($filePath)],
-        ];
+        $cacheKey = 'file_id_' . md5($filePath);
+        $fileId = Settings::get($cacheKey);
+
+        if ($fileId) {
+            $multipart = [
+                ['name' => 'chat_id', 'contents' => (string) $chatId],
+                ['name' => 'photo', 'contents' => $fileId],
+            ];
+        } else {
+            if (function_exists('set_time_limit')) {
+                @set_time_limit(180);
+            }
+            $multipart = [
+                ['name' => 'chat_id', 'contents' => (string) $chatId],
+                ['name' => 'photo', 'contents' => fopen($filePath, 'r'), 'filename' => basename($filePath)],
+            ];
+        }
+
         if ($caption) {
             $multipart[] = ['name' => 'caption', 'contents' => $caption];
             $multipart[] = ['name' => 'parse_mode', 'contents' => 'MarkdownV2'];
@@ -121,22 +156,33 @@ class TelegramApi
 
         $response = $this->http->post("{$this->baseUrl}/sendPhoto", [
             'multipart' => $multipart,
+            'timeout'   => 120,
         ]);
 
         $result = json_decode($response->getBody()->getContents(), true);
 
         if ($result['ok'] === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
-            // Re-open the file because the previous resource was closed by Guzzle
             $multipart = array_filter($multipart, fn($item) => $item['name'] !== 'parse_mode');
-            foreach ($multipart as &$item) {
-                if ($item['name'] === 'photo') {
-                    $item['contents'] = fopen($filePath, 'r');
+            if (!$fileId) {
+                foreach ($multipart as &$item) {
+                    if ($item['name'] === 'photo') {
+                        $item['contents'] = fopen($filePath, 'r');
+                    }
                 }
             }
             $response = $this->http->post("{$this->baseUrl}/sendPhoto", [
                 'multipart' => $multipart,
+                'timeout'   => 120,
             ]);
-            return json_decode($response->getBody()->getContents(), true);
+            $result = json_decode($response->getBody()->getContents(), true);
+        }
+
+        if (!$fileId && $result['ok'] === true && isset($result['result']['photo'])) {
+            $photoArray = $result['result']['photo'];
+            $largestPhoto = end($photoArray);
+            if (isset($largestPhoto['file_id'])) {
+                Settings::set($cacheKey, $largestPhoto['file_id']);
+            }
         }
 
         return $result;
@@ -144,10 +190,24 @@ class TelegramApi
 
     public function sendVideo(int|string $chatId, string $filePath, ?string $caption = null, ?array $replyMarkup = null): array
     {
-        $multipart = [
-            ['name' => 'chat_id', 'contents' => (string) $chatId],
-            ['name' => 'video', 'contents' => fopen($filePath, 'r'), 'filename' => basename($filePath)],
-        ];
+        $cacheKey = 'file_id_' . md5($filePath);
+        $fileId = Settings::get($cacheKey);
+
+        if ($fileId) {
+            $multipart = [
+                ['name' => 'chat_id', 'contents' => (string) $chatId],
+                ['name' => 'video', 'contents' => $fileId],
+            ];
+        } else {
+            if (function_exists('set_time_limit')) {
+                @set_time_limit(180);
+            }
+            $multipart = [
+                ['name' => 'chat_id', 'contents' => (string) $chatId],
+                ['name' => 'video', 'contents' => fopen($filePath, 'r'), 'filename' => basename($filePath)],
+            ];
+        }
+
         if ($caption) {
             $multipart[] = ['name' => 'caption', 'contents' => $caption];
             $multipart[] = ['name' => 'parse_mode', 'contents' => 'MarkdownV2'];
@@ -158,22 +218,29 @@ class TelegramApi
 
         $response = $this->http->post("{$this->baseUrl}/sendVideo", [
             'multipart' => $multipart,
+            'timeout'   => 120,
         ]);
 
         $result = json_decode($response->getBody()->getContents(), true);
 
         if ($result['ok'] === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
-            // Re-open the file because the previous resource was closed by Guzzle
             $multipart = array_filter($multipart, fn($item) => $item['name'] !== 'parse_mode');
-            foreach ($multipart as &$item) {
-                if ($item['name'] === 'video') {
-                    $item['contents'] = fopen($filePath, 'r');
+            if (!$fileId) {
+                foreach ($multipart as &$item) {
+                    if ($item['name'] === 'video') {
+                        $item['contents'] = fopen($filePath, 'r');
+                    }
                 }
             }
             $response = $this->http->post("{$this->baseUrl}/sendVideo", [
                 'multipart' => $multipart,
+                'timeout'   => 120,
             ]);
-            return json_decode($response->getBody()->getContents(), true);
+            $result = json_decode($response->getBody()->getContents(), true);
+        }
+
+        if (!$fileId && $result['ok'] === true && isset($result['result']['video']['file_id'])) {
+            Settings::set($cacheKey, $result['result']['video']['file_id']);
         }
 
         return $result;
