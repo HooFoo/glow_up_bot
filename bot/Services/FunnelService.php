@@ -67,8 +67,10 @@ class FunnelService
     {
         // Глобальный обработчик для продолжения воронки (пропуск оффера)
         if ($data === 'funnel_skip_course') {
-            (new ProfileService())->addFact($userId, 'Выбран путь: пропуск предложения курса');
-            $this->advanceToOnboarding($chatId, $userId);
+            if ($state !== 'active') {
+                (new ProfileService())->addFact($userId, 'Выбран путь: пропуск предложения курса');
+                $this->advanceToOnboarding($chatId, $userId);
+            }
             return;
         }
 
@@ -85,16 +87,18 @@ class FunnelService
                 (new ProfileService())->addFact($userId, $fact);
             }
             $this->advanceToStep2($chatId, $userId);
-        } elseif ($state === 'funnel_step_5_offer') {
-            if ($data === 'funnel_path_nastya') {
-                $this->sendStepNastyaOffer($chatId, $userId);
-                (new ProfileService())->addFact($userId, 'Выбран путь: прохождение с Настей');
-            } elseif ($data === 'funnel_path_self') {
-                (new ProfileService())->addFact($userId, 'Выбран путь: самостоятельное прохождение с ботом');
-                $this->advanceToOnboarding($chatId, $userId);
-            } elseif ($data === 'funnel_direct_pay') {
-                (new ProfileService())->addFact($userId, 'Выбран путь: прямая оплата по ссылке');
-                $this->sendDirectPaymentLink($chatId, $userId);
+        } elseif (in_array($data, ['funnel_path_nastya', 'funnel_path_self', 'funnel_direct_pay'])) {
+            if ($state !== 'active') {
+                if ($data === 'funnel_path_nastya') {
+                    $this->sendStepNastyaOffer($chatId, $userId);
+                    (new ProfileService())->addFact($userId, 'Выбран путь: прохождение с Настей');
+                } elseif ($data === 'funnel_path_self') {
+                    (new ProfileService())->addFact($userId, 'Выбран путь: самостоятельное прохождение с ботом');
+                    $this->advanceToOnboarding($chatId, $userId);
+                } elseif ($data === 'funnel_direct_pay') {
+                    (new ProfileService())->addFact($userId, 'Выбран путь: прямая оплата по ссылке');
+                    $this->sendDirectPaymentLink($chatId, $userId);
+                }
             }
         } elseif ($state === 'funnel_step_nastya_offer' && $data === 'funnel_nastya_go') {
             $this->sendStepNastyaClose($chatId, $userId);
