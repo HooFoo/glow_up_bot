@@ -76,7 +76,23 @@ foreach ($users as $user) {
             }
         } elseif ($isActive) {
             if ($postTrialDays == 2) {
-                sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_active_day_2_nudge');
+                $coursePrice = Config::getProdamusCoursePrice();
+                $subPrice = Config::getProdamusSubscriptionPrice();
+                
+                $buttons = [
+                    [
+                        ['text' => sprintf($textService->get('btn_funnel_nastya', 'С Настей (%d Р)', true), $coursePrice), 'callback_data' => 'funnel_path_nastya'], 
+                        ['text' => sprintf($textService->get('btn_funnel_bot', 'С ботом (%d Р)', true), $subPrice), 'callback_data' => 'funnel_path_self']
+                    ],
+                    [
+                        ['text' => $textService->get('btn_step_5_direct_pay', 'Оплатить участие', true), 'callback_data' => 'funnel_direct_pay']
+                    ],
+                    [
+                        ['text' => $textService->get('btn_skip_course', 'Продолжить в бесплатной версии', true), 'callback_data' => 'funnel_skip_course']
+                    ]
+                ];
+                
+                sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_step_5_soft_offer', 'msg_active_day_2_nudge', $buttons);
             } elseif ($postTrialDays == 4) {
                 sendMessageSafe($db, $telegram, $textService, $userId, $chatId, 'msg_active_day_4_upgrade');
             }

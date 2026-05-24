@@ -181,7 +181,7 @@ adminHeader('Пользователь: ' . htmlspecialchars($user['first_name'])
             $otherMessages = [
                 'msg_after_demo_followup' => 'После демо (fol)',
                 'msg_return_offer' => 'Возврат (offer)',
-                'msg_active_day_2_nudge' => 'Активность Д2',
+                'msg_active_day_2_nudge' => 'Активность Д2 (Soft Offer)',
                 'msg_active_day_4_upgrade' => 'Активность Д4',
             ];
 

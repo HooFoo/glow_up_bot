@@ -10,6 +10,7 @@ use App\Services\TextService;
 use App\Services\UserService;
 use App\Services\OnboardingService;
 use App\Services\ProdamusService;
+use App\Services\SubscriptionService;
 
 class FunnelService
 {
@@ -57,7 +58,7 @@ class FunnelService
         } elseif ($state === 'funnel_step_3') {
             $this->advanceToStep4($chatId, $userId);
         } elseif ($state === 'funnel_step_4') {
-            $this->advanceToStep5($chatId, $userId);
+            $this->advanceToOnboarding($chatId, $userId);
         } elseif ($state === 'funnel_step_self') {
             $this->advanceToOnboarding($chatId, $userId);
         }
@@ -88,17 +89,20 @@ class FunnelService
             }
             $this->advanceToStep2($chatId, $userId);
         } elseif (in_array($data, ['funnel_path_nastya', 'funnel_path_self', 'funnel_direct_pay'])) {
-            if ($state !== 'active') {
-                if ($data === 'funnel_path_nastya') {
-                    $this->sendStepNastyaOffer($chatId, $userId);
-                    (new ProfileService())->addFact($userId, 'Выбран путь: прохождение с Настей');
-                } elseif ($data === 'funnel_path_self') {
-                    (new ProfileService())->addFact($userId, 'Выбран путь: самостоятельное прохождение с ботом');
+            if ($data === 'funnel_path_nastya') {
+                $this->sendStepNastyaOffer($chatId, $userId);
+                (new ProfileService())->addFact($userId, 'Выбран путь: прохождение с Настей');
+            } elseif ($data === 'funnel_path_self') {
+                (new ProfileService())->addFact($userId, 'Выбран путь: самостоятельное прохождение с ботом');
+                if ($state === 'active') {
+                    $subService = new SubscriptionService($this->telegram);
+                    $subService->sendPaywall($chatId, $userId);
+                } else {
                     $this->advanceToOnboarding($chatId, $userId);
-                } elseif ($data === 'funnel_direct_pay') {
-                    (new ProfileService())->addFact($userId, 'Выбран путь: прямая оплата по ссылке');
-                    $this->sendDirectPaymentLink($chatId, $userId);
                 }
+            } elseif ($data === 'funnel_direct_pay') {
+                (new ProfileService())->addFact($userId, 'Выбран путь: прямая оплата по ссылке');
+                $this->sendDirectPaymentLink($chatId, $userId);
             }
         } elseif ($state === 'funnel_step_nastya_offer' && $data === 'funnel_nastya_go') {
             $this->sendStepNastyaClose($chatId, $userId);
@@ -170,7 +174,7 @@ class FunnelService
         } elseif (!empty($text)) {
             $this->telegram->sendMessage($chatId, $text);
         } else {
-            $this->advanceToStep5($chatId, $userId);
+            $this->advanceToOnboarding($chatId, $userId);
         }
     }
 
