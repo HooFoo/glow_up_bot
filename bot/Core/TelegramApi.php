@@ -89,8 +89,13 @@ class TelegramApi
         $result = json_decode($response->getBody()->getContents(), true);
 
         if ($result['ok'] === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
-            // Retry without parse_mode
+            // Re-open the file because the previous resource was closed by Guzzle
             $multipart = array_filter($multipart, fn($item) => $item['name'] !== 'parse_mode');
+            foreach ($multipart as &$item) {
+                if ($item['name'] === 'document') {
+                    $item['contents'] = fopen($filePath, 'r');
+                }
+            }
             $response = $this->http->post("{$this->baseUrl}/sendDocument", [
                 'multipart' => $multipart,
             ]);
@@ -121,8 +126,13 @@ class TelegramApi
         $result = json_decode($response->getBody()->getContents(), true);
 
         if ($result['ok'] === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
-            // Retry without parse_mode
+            // Re-open the file because the previous resource was closed by Guzzle
             $multipart = array_filter($multipart, fn($item) => $item['name'] !== 'parse_mode');
+            foreach ($multipart as &$item) {
+                if ($item['name'] === 'photo') {
+                    $item['contents'] = fopen($filePath, 'r');
+                }
+            }
             $response = $this->http->post("{$this->baseUrl}/sendPhoto", [
                 'multipart' => $multipart,
             ]);
@@ -153,8 +163,13 @@ class TelegramApi
         $result = json_decode($response->getBody()->getContents(), true);
 
         if ($result['ok'] === false && str_contains($result['description'] ?? '', 'can\'t parse entities')) {
-            // Retry without parse_mode
+            // Re-open the file because the previous resource was closed by Guzzle
             $multipart = array_filter($multipart, fn($item) => $item['name'] !== 'parse_mode');
+            foreach ($multipart as &$item) {
+                if ($item['name'] === 'video') {
+                    $item['contents'] = fopen($filePath, 'r');
+                }
+            }
             $response = $this->http->post("{$this->baseUrl}/sendVideo", [
                 'multipart' => $multipart,
             ]);
