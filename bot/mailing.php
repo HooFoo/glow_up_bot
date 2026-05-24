@@ -62,9 +62,11 @@ foreach ($users as $user) {
     $now = new \DateTime();
     $daysSince = $createdAt->diff($now)->days;
 
+    $freeDays = Config::getFreeDays();
+
     // Post-trial FREE logic
-    if ($daysSince > 2 && !$isPaid) {
-        $postTrialDays = $daysSince - 2;
+    if ($daysSince > $freeDays && !$isPaid) {
+        $postTrialDays = $daysSince - $freeDays;
         
         if ($state === 'demo_prompt') {
             if ($postTrialDays == 1) {

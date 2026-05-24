@@ -31,11 +31,20 @@ class SubscriptionService
     }
 
     /**
-     * Try to consume a free action. Returns true if successful or if user is paid.
+     * Check if user is currently in the trial period.
+     */
+    public function hasActiveTrial(array $user): bool
+    {
+        $freeDays = Config::getFreeDays();
+        return !empty($user['quiz_completed_at']) && (strtotime($user['quiz_completed_at']) + $freeDays * 86400) > time();
+    }
+
+    /**
+     * Try to consume a free action. Returns true if successful or if user is paid / on trial.
      */
     public function consumeFreeAction(array $user, string $actionType): bool
     {
-        if ($this->hasActiveSubscription($user)) {
+        if ($this->hasActiveSubscription($user) || $this->hasActiveTrial($user)) {
             return true;
         }
 

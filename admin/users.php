@@ -43,7 +43,7 @@ adminHeader('Пользователи', 'users');
             <td>
                 <?php if (!empty($u['subscription_end']) && strtotime($u['subscription_end']) > time()): ?>
                     <span class="badge badge-active">Активна до <?= date('d.m.Y', strtotime($u['subscription_end'])) ?></span>
-                <?php elseif (!empty($u['quiz_completed_at']) && (strtotime($u['quiz_completed_at']) + 2 * 86400) > time()): ?>
+                <?php elseif (!empty($u['quiz_completed_at']) && (strtotime($u['quiz_completed_at']) + App\Core\Config::getFreeDays() * 86400) > time()): ?>
                     <span class="badge badge-trial">Триал</span>
                 <?php else: ?>
                     <span class="badge badge-inactive">Нет</span>

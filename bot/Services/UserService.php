@@ -168,9 +168,10 @@ class UserService
         $this->db->execute('DELETE FROM subscriptions WHERE user_id = :id', [':id' => $userId]);
         $this->db->execute('DELETE FROM sent_mailings WHERE user_id = :id', [':id' => $userId]);
         $this->db->execute('DELETE FROM broadcast_logs WHERE user_id = :id', [':id' => $userId]);
+        $this->db->execute('DELETE FROM payment_logs WHERE user_id = :id', [':id' => $userId]);
 
         $this->db->execute(
-            'UPDATE users SET state = "new", quiz_completed_at = NULL, onboarding_completed_at = NULL, persona = NULL, active_mode = NULL, message_count = 0, subscription_end = NULL, trial_funnel_step = 0, last_funnel_message_at = NULL, created_at = NOW() WHERE id = :id',
+            'UPDATE users SET state = "new", terms_accepted_at = NULL, quiz_completed_at = NULL, onboarding_completed_at = NULL, persona = NULL, active_mode = NULL, message_count = 0, subscription_end = NULL, trial_funnel_step = 0, last_funnel_message_at = NULL, free_meal_count = 0, free_cosmetic_count = 0, free_request_count = 0, last_message_at = NULL, created_at = NOW() WHERE id = :id',
             [':id' => $userId]
         );
     }

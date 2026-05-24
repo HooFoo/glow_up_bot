@@ -141,7 +141,7 @@ adminHeader('Пользователь: ' . htmlspecialchars($user['first_name'])
             <span class="field-label">Статус:</span>
             <?php if (!empty($user['subscription_end']) && strtotime($user['subscription_end']) > time()): ?>
                 <span class="badge badge-active">Активна</span>
-            <?php elseif (!empty($user['quiz_completed_at']) && (strtotime($user['quiz_completed_at']) + 2 * 86400) > time()): ?>
+            <?php elseif (!empty($user['quiz_completed_at']) && (strtotime($user['quiz_completed_at']) + App\Core\Config::getFreeDays() * 86400) > time()): ?>
                 <span class="badge badge-trial">Триал</span>
             <?php else: ?>
                 <span class="badge badge-inactive">Неактивна</span>

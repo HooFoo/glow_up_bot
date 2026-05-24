@@ -406,7 +406,7 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
         // Handle practices separately (upsell check)
         if ($mode === 'practices') {
             $subService = new SubscriptionService($telegram);
-            if (!$subService->checkAccess($user) || empty($user['subscription_end'])) {
+            if (!$subService->hasActiveSubscription($user) && !$subService->hasActiveTrial($user)) {
                 // Not a subscriber? Show upsell message instead of switching
                 $textService = new \App\Services\TextService();
                 $upsellText = $textService->get('msg_mode_practices_locked', "Этот раздел доступен только в расширенной версии Prime ✨\n\nХочешь подключиться и получить доступ к эксклюзивным практикам?", true);
