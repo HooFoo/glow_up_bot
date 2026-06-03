@@ -89,6 +89,7 @@ $logger->info("Prodamus callback signature verified [ID: {$requestId}]");
 $orderId = (string)($data['order_num'] ?? $data['order_id'] ?? '');
 $userId = (int) ($data['customer_extra'] ?? 0);
 $sum = (float) ($data['sum'] ?? 0);
+$bindingId = !empty($data['binding_id']) ? (string) $data['binding_id'] : null;
 
 // For successful payment, we check payment_status.
 if ($paymentStatus === 'success' && $userId > 0 && !empty($orderId)) {
@@ -96,7 +97,7 @@ if ($paymentStatus === 'success' && $userId > 0 && !empty($orderId)) {
     $subService = new SubscriptionService($telegram);
     
     try {
-        $subService->handlePayment($userId, $orderId, $sum);
+        $subService->handlePayment($userId, $orderId, $sum, $bindingId);
         $logger->info("Prodamus payment processed successfully [ID: {$requestId}]", ['order_id' => $orderId, 'user_id' => $userId]);
         echo 'OK';
     } catch (\Throwable $e) {

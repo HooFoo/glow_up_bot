@@ -23,6 +23,8 @@ class ProdamusService
             'sum' => $sum,
             'order_id' => $orderId,
             'customer_extra' => (string) $userId,
+            'client_id' => (string) $userId,
+            'return_all_methods' => '1',
             'products[0][name]' => $productName,
             'products[0][price]' => $sum,
             'products[0][quantity]' => 1,
@@ -35,6 +37,27 @@ class ProdamusService
         
         $queryString = http_build_query($params);
         return "https://{$domain}.payform.ru/?{$queryString}";
+    }
+
+    /**
+     * Generate HMAC-SHA256 signature for Prodamus data.
+     */
+    public function generateSignature(array $data, string $secret): string
+    {
+        $dataToSign = $data;
+        // 1. Convert all values to strings recursively
+        array_walk_recursive($dataToSign, function(&$v) {
+            $v = strval($v);
+        });
+
+        // 2. Sort keys recursively
+        $this->recursiveSort($dataToSign);
+
+        // 3. Encode to JSON with specific flags
+        $json = json_encode($dataToSign, JSON_UNESCAPED_UNICODE);
+
+        // 4. Calculate HMAC
+        return hash_hmac('sha256', $json, $secret);
     }
 
     /**
@@ -53,22 +76,70 @@ class ProdamusService
             $receivedSignature = substr($receivedSignature, 3);
         }
 
-        $dataToSign = $data;
-        // 1. Convert all values to strings recursively
-        array_walk_recursive($dataToSign, function(&$v) {
-            $v = strval($v);
-        });
-
-        // 2. Sort keys recursively
-        $this->recursiveSort($dataToSign);
-
-        // 3. Encode to JSON with specific flags
-        $json = json_encode($dataToSign, JSON_UNESCAPED_UNICODE);
-
-        // 4. Calculate HMAC
-        $expectedSignature = hash_hmac('sha256', $json, $secret);
+        $expectedSignature = $this->generateSignature($data, $secret);
         
         return hash_equals(strtolower($expectedSignature), strtolower($receivedSignature));
+    }
+
+    /**
+     * Charge card recurrently using Prodamus Token/Card Binding API.
+     */
+    public function chargeRecurrent(int $userId, string $bindingId, string $orderId, float $sum, string $productName = 'Подписка Prime Glow'): array
+    {
+        $domain = Config::getProdamusDomain();
+        $sys = Config::getProdamusRecurrentSys();
+        $secret = Config::getProdamusRecurrentToken();
+
+        if (empty($domain) || empty($sys) || empty($secret)) {
+            return [
+                'success' => false,
+                'error' => 'Missing recurrent payment configuration'
+            ];
+        }
+
+        $params = [
+            'binding_id' => $bindingId,
+            'client_id' => (string) $userId,
+            'sys' => $sys,
+            'sum' => $sum,
+            'order_id' => $orderId,
+            'customer_extra' => (string) $userId,
+            'products[0][name]' => $productName,
+            'products[0][price]' => $sum,
+            'products[0][quantity]' => 1,
+        ];
+
+        // Sign the params
+        $signature = $this->generateSignature($params, $secret);
+        $params['signature'] = $signature;
+
+        $client = new \GuzzleHttp\Client([
+            'timeout' => 15.0,
+        ]);
+
+        try {
+            $url = "https://{$domain}.payform.ru/rest/payment/do/";
+            $response = $client->post($url, [
+                'form_params' => $params
+            ]);
+
+            $body = (string) $response->getBody();
+            $data = json_decode($body, true);
+
+            if ($data === null) {
+                return [
+                    'success' => false,
+                    'error' => 'Invalid JSON response from Prodamus: ' . substr($body, 0, 500)
+                ];
+            }
+
+            return $data; // e.g. {"success": true} or {"success": false, "error": "error message"}
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'error' => 'HTTP request failed: ' . $e->getMessage()
+            ];
+        }
     }
 
     /**

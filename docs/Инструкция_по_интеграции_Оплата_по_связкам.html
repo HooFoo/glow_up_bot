@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<title></title>
+	<meta name="generator" content="LibreOffice 7.6.0.3 (Windows)"/>
+	<meta name="author" content="Admin"/>
+	<meta name="created" content="2024-10-25T10:19:00"/>
+	<meta name="changedby" content="User"/>
+	<meta name="changed" content="2024-10-25T10:19:00"/>
+	<meta name="AppVersion" content="16.0000"/>
+	<meta name="Company" content="SPecialiST RePack"/>
+	<style type="text/css">
+		@page { size: 21cm 29.7cm; margin-left: 3cm; margin-right: 1.5cm; margin-top: 2cm; margin-bottom: 2cm }
+		p { line-height: 115%; text-align: left; orphans: 2; widows: 2; margin-bottom: 0.25cm; direction: ltr; background: transparent }
+		a:link { color: #0563c1; text-decoration: underline }
+	</style>
+</head>
+<body lang="ru-RU" link="#0563c1" vlink="#800000" dir="ltr"><p align="center" style="line-height: 108%; margin-bottom: 0.28cm">
+<font size="4" style="font-size: 14pt"><b>Интеграция по
+токену (оплата по связкам)</b></font></p>
+<p align="center" style="line-height: 108%; margin-bottom: 0.28cm"><i><b>Возможность
+безакцептного списания суммы с карты
+плательщика</b></i></p>
+<p style="line-height: 108%; margin-bottom: 0.28cm"><br/>
+<br/>
+
+</p>
+<p style="line-height: 108%; margin-bottom: 0.28cm"><b>1 этап</b></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">Перед
+началом интеграции Вам необходимо
+придумать <font color="#ff0000">параметр </font><font color="#ff0000"><span lang="en-US">sys</span></font><font color="#ff0000">,
+</font>который будет являться кодом Вашей
+системы. (слово на английской раскладке,
+маленькими буквами. Обычно разработчики
+закладывают сюда название своей системы)</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">Этот
+параметр нужно сообщить сотрудникам
+поддержки Продамус, для фиксации в
+системе (по нему система будет выдавать
+соответствующие разрешения)</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">После
+того, как параметр будет зарегистрирован,
+поддержка Продамуса Вам выдаст <font color="#ff0000">ключ,
+ </font></font></font>
+</p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">с
+помощью которого можно будет продолжить
+дальнейшую интеграцию </font></font>
+</p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt"><b>2
+этап</b></font></font></p>
+<p style="line-height: 108%; margin-bottom: 0.28cm">При
+использовании этого варианта настройки
+интеграции Ваша система может получать
+в веб-хуках от Продамуса специальный
+токен и проводить оплату с его помощью
+через <span lang="en-US">api</span></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">Для
+того, чтобы получить данный токен, при
+формировании платежной ссылки, необходимо
+сформировать запрос на оплату, включив
+параметр</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+ <font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">client_id,
+значением которого должен быть уникальный
+идентификатор пользователя на стороне
+Вашей системы. Тип значения - строка
+длиной до 32 символов.</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">После
+оплаты пользователем, на указанный
+<span lang="en-US">url</span>-адрес будет отправлен
+веб-хук, содержащий токен.</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt"><span lang="en-US">P</span>.<span lang="en-US">S</span>.
+Если вы передали при запросе <span lang="en-US">client</span>_<span lang="en-US">id</span>
+будет доступен способ оплаты, только
+картой. Чтобы были доступны и остальные
+способы нужно передать return_all_methods со
+значением 1</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">Для
+оплаты по токену необходимо сделать
+запрос к api платежной формы по адресу в
+формате:</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt"><span lang="en-US">https</span>://
+<font color="#ff0000">домен вашей платежной
+страницы </font>/<span lang="en-US">rest</span>/<span lang="en-US">payment</span>/<span lang="en-US">do</span>/</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">Например:
+<a href="https://producer.payform.ru/rest/payment/do"><font color="#0563c1"><u><span lang="en-US">https</span></u></font><font color="#0563c1"><u>://</u></font><font color="#0563c1"><u><span lang="en-US">producer</span></u></font><font color="#0563c1"><u>.</u></font><font color="#0563c1"><u><span lang="en-US">payform</span></u></font><font color="#0563c1"><u>.</u></font><font color="#0563c1"><u><span lang="en-US">ru</span></u></font><font color="#0563c1"><u>/</u></font><font color="#0563c1"><u><span lang="en-US">rest</span></u></font><font color="#0563c1"><u>/</u></font><font color="#0563c1"><u><span lang="en-US">payment</span></u></font><font color="#0563c1"><u>/</u></font><font color="#0563c1"><u><span lang="en-US">do</span></u></font></a></font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt"><i><b>У
+каждого клиента домен платежной страницы
+уникален. При тестировании следует
+использовать адрес тестовой страницы,
+который Вам выдаст поддержка Продамуса.</b></i></font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">В
+качестве параметров принимаются те же
+данные, как при формировании платежной
+ссылки <b>(за исключением do)</b>.  В запросе
+необходимо передать <b>обязательные
+параметры:</b></font></font></p>
+<ol>
+	<li><p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0cm">
+	<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">binding_id
+	- платежный токен полученный в хуке</font></font></p></li>
+	<li><p style="line-height: 100%; margin-bottom: 0cm"><font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">client_id
+	– уникальный идентификатор пользователя
+	на стороне Вашей системы, который должен
+	совпадать со значением, переданным в
+	ссылке при первой оплате</font></font></p></li>
+	<li><p style="line-height: 100%; margin-bottom: 0.49cm"> <font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">sys
+	- код системы </font></font>
+	</p></li>
+</ol>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">Запрос
+к <span lang="en-US">api</span> необходимо подписать
+секретным ключом, выданным поддержкой
+Продамуса </font></font>
+</p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt"><i>Внимание!
+Ключ подписи для оплаты по токену не
+совпадает с ключом, указанным в настройках
+конкретной платежной страницы ( выданной
+Вам на тестирование)  и выдается
+поддержкой.</i></font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">Так
+же обращаем  внимание на то, что <b>подпись
+необходимо передать в теле запроса в
+параметре signature</b> (так же как при
+формировании платежной ссылки)</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">в
+случае успешной оплаты, <span lang="en-US">api</span>
+должен вернуть следующий ответ:</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">{&quot;success&quot;:true}</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">в
+случае не успешной:</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt"><span lang="en-US">{&quot;success&quot;:false,&quot;error&quot;:&quot;</span>текст<span lang="en-US">
+</span>ошибки<span lang="en-US">&quot;}</span></font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">так
+же при оплате через api будут отправлены
+те же уведомления, что и при обычной
+оплате (веб-хук, email). формат данных
+уведомлений пока отличаться не будет</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt"><b>Веб-хуки</b></font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<font face="Times New Roman, serif"><font size="3" style="font-size: 12pt">В
+веб-хуки добавлен параметр payment_init,
+который может принимать три значения:
+manual, auto, api. при оплате по токену через
+апи payment_init будет принимать значение
+&quot;api&quot;</font></font></p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-top: 0.49cm; margin-bottom: 0.49cm">
+<br/>
+<br/>
+
+</p>
+<p style="line-height: 108%; margin-bottom: 0.28cm"><br/>
+<br/>
+
+</p>
+</body>
+</html>

@@ -267,6 +267,9 @@ function handleCommand(int $chatId, int $userId, string $text, array $user, Tele
                     : $textService->get('msg_profile_sub_inactive', "Не активна", true);
                 
                 $text .= $textService->get('msg_profile_subscription', "Подписка: ", true) . $statusLabel . "\n";
+                if ($isSubscribed && !empty($user['prodamus_binding_id'])) {
+                    $text .= $textService->get('msg_profile_autorenewal_active', "💳 Автопродление: Активно", true) . "\n";
+                }
 
                 // Cycle phase (dynamically calculated)
                 if (!empty($profile['cycle_phase'])) {
@@ -284,10 +287,15 @@ function handleCommand(int $chatId, int $userId, string $text, array $user, Tele
                     $text .= $textService->get('msg_profile_last_period', "Дата последних месячных: ", true) . $profile['last_period_date'] . "\n";
                 }
 
-                $keyboard = TelegramApi::inlineKeyboard([
+                $keyboardButtons = [
                     [['text' => $textService->get('btn_edit_profile', '✏️ Редактировать профиль', true), 'callback_data' => 'edit_profile']],
-                    [['text' => $textService->get('btn_back_to_menu', '⬅️ Назад в меню', true), 'callback_data' => 'back_to_menu']],
-                ]);
+                ];
+                if (!empty($user['prodamus_binding_id'])) {
+                    $keyboardButtons[] = [['text' => $textService->get('btn_cancel_autorenewal', '❌ Отключить автопродление', true), 'callback_data' => 'cancel_autorenewal']];
+                }
+                $keyboardButtons[] = [['text' => $textService->get('btn_back_to_menu', '⬅️ Назад в меню', true), 'callback_data' => 'back_to_menu']];
+
+                $keyboard = TelegramApi::inlineKeyboard($keyboardButtons);
                 $telegram->sendMessage($chatId, $text, $keyboard);
             } else {
                 $telegram->sendMessage($chatId, $textService->get('msg_profile_not_filled', 'Профиль ещё не заполнен. Пройди онбординг: /start', true));
@@ -452,6 +460,19 @@ function handleCallback(int $chatId, int $userId, string $data, array $user, Tel
     if ($data === 'edit_profile') {
         $onboarding = new OnboardingService($telegram);
         $onboarding->resetAndRestart($chatId, $userId);
+        return;
+    }
+
+    // Cancel autorenewal
+    if ($data === 'cancel_autorenewal') {
+        $userService = new UserService();
+        $userService->updateProdamusBindingId($userId, null);
+
+        $telegram->sendMessage($chatId, $textService->get('msg_autorenewal_cancelled', "❌ Автопродление подписки успешно отключено.", true));
+        
+        // Refresh profile view
+        $user = $userService->findById($userId);
+        handleCommand($chatId, $userId, '/profile', $user, $telegram);
         return;
     }
 

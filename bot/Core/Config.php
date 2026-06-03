@@ -50,6 +50,17 @@ class Config
         return self::get('PRODAMUS_SECRET', '');
     }
 
+    public static function getProdamusRecurrentSys(): string
+    {
+        return self::get('PRODAMUS_RECURRENT_SYS', 'Primemodeagent');
+    }
+
+    public static function getProdamusRecurrentToken(): string
+    {
+        return self::get('PRODAMUS_RECURRENT_TOKEN', '');
+    }
+
+
     public static function getProdamusPrice(): int
     {
         return self::getProdamusSubscriptionPrice();

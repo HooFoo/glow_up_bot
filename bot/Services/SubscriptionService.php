@@ -145,7 +145,7 @@ class SubscriptionService
     /**
      * Handle successful payment (Prodamus).
      */
-    public function handlePayment(int $userId, string $orderId, float $amount): void
+    public function handlePayment(int $userId, string $orderId, float $amount, ?string $bindingId = null): void
     {
         $days = Config::getSubscriptionDays();
 
@@ -185,6 +185,9 @@ class SubscriptionService
 
         // Update user
         $userService->setSubscriptionEnd($userId, $endsAt);
+        if ($bindingId !== null) {
+            $userService->updateProdamusBindingId($userId, $bindingId);
+        }
 
         // Notify user
         $text = sprintf($this->textService->get('msg_payment_success', "✨ *Оплата прошла успешно!*\n\nТвой доступ продлён до %s\nЯ продолжаю работать для тебя 💎", true), date('d.m.Y', strtotime($endsAt)));
